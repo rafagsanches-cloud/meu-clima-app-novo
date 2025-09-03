@@ -180,9 +180,3 @@ else:  # Sobre o Sistema
 # Footer
 st.markdown("---")
 st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.0 | **Última atualização:** 2024")
-```
-```eof
-
-7.  Role para baixo e clique no botão verde **"Commit changes"** para salvar a alteração.
-
-O Streamlit Cloud vai detectar a alteração e, desta vez, seu aplicativo deve rodar sem erros de sintaxe. Me avise se ele finalmente funcion
