@@ -174,7 +174,8 @@ else:  # Sobre o Sistema
     
     fig = px.line(df_exemplo, x="Data", y=["Real", "Previsto"], 
                   title="Comparação: Precipitação Real vs Prevista")
-    fig.update_yaxis(title="Precipitação (mm)")
+    # Correção na linha abaixo
+    fig.update_layout(yaxis_title="Precipitação (mm)")
     st.plotly_chart(fig, use_container_width=True)
 
 # Footer
