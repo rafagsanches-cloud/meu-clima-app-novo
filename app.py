@@ -186,9 +186,9 @@ else:  # Sobre o Sistema
     - **Nome:** Rafael Grecco Sanches
     
     #### Links Profissionais:
-    - **Lattes:** [Seu Link do Lattes](<URL DO SEU LATTES>)
-    - **Google Acadêmico:** [Seu Perfil no Google Acadêmico](<URL DO SEU GOOGLE ACADÊMICO>)
-    - **Outros:** [Seu Site ou LinkedIn](<URL DO SEU SITE/LINKEDIN>)
+    - **Lattes:** [Seu Link do Lattes](<http://lattes.cnpq.br/2395726310692375>)
+    - **Google Acadêmico:** [Seu Perfil no Google Acadêmico](<https://scholar.google.com/citations?user=hCerscwAAAAJ&hl=pt-BR>)
+    - **Outros:** [Seu Site ou LinkedIn](<www.linkedin.com/in/rafael-grecco-sanches-202807226>)
     """)
 
 # Footer
