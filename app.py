@@ -174,9 +174,22 @@ else:  # Sobre o Sistema
     
     fig = px.line(df_exemplo, x="Data", y=["Real", "Previsto"], 
                   title="Comparação: Precipitação Real vs Prevista")
-    # Correção na linha abaixo
     fig.update_layout(yaxis_title="Precipitação (mm)")
     st.plotly_chart(fig, use_container_width=True)
+    
+    # --- Nova seção de Créditos ---
+    st.markdown("---")
+    st.header("👨‍💻 Sobre o Autor")
+    
+    st.markdown("""
+    Este projeto foi desenvolvido por:
+    - **Nome:** Rafael Grecco Sanches
+    
+    #### Links Profissionais:
+    - **Lattes:** [Seu Link do Lattes](<URL DO SEU LATTES>)
+    - **Google Acadêmico:** [Seu Perfil no Google Acadêmico](<URL DO SEU GOOGLE ACADÊMICO>)
+    - **Outros:** [Seu Site ou LinkedIn](<URL DO SEU SITE/LINKEDIN>)
+    """)
 
 # Footer
 st.markdown("---")
