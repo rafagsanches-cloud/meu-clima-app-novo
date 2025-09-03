@@ -182,13 +182,17 @@ st.markdown("---")
 st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.0 | **Última atualização:** 2024")
 ```
 ```eof
-4.  Abra o TextEdit novamente, vá em `Formatar > Converter para Texto Simples`.
-5.  **Copie o conteúdo abaixo** e cole-o. Salve o arquivo como **`requirements.txt`** dentro da mesma pasta.
+2.  **Substituir o Arquivo no seu Desktop:**
+    * Abra a pasta **`meu-clima-app-novo`** no seu Mac.
+    * Abra o arquivo `app.py` com o TextEdit.
+    * **Apague todo o conteúdo** que está lá e **cole o código que você acabou de copiar** acima.
+    * Salve o arquivo.
 
+3.  **Substituir o Arquivo no GitHub:**
+    * Vá para a página do seu repositório no GitHub (`github.com/seu_usuario/meu-clima-app-novo`).
+    * Clique no arquivo `app.py`.
+    * No canto superior direito, clique no ícone de **lápis** para editar o arquivo.
+    * **Apague todo o conteúdo** da caixa de texto e **cole o código corrigido**.
+    * Role para baixo e clique no botão verde **"Commit changes"**.
 
-```text:Requisitos da Aplicação:requirements.txt
-streamlit
-plotly
-pandas
-numpy
-```
+Ao fazer isso, o Streamlit Cloud detectará a alteração e, desta vez, vai rodar o código perfeitamente. Me diga se a sua aplicação finalmente aparec
