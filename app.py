@@ -50,23 +50,38 @@ def generate_municipios_list():
             "Campinas", "Ribeirão Preto", "Uberlândia", "Santos", "Londrina",
             "São José dos Campos", "Feira de Santana", "Cuiabá", "Anápolis",
             "Maringá", "Juiz de Fora", "Niterói", "Campos dos Goytacazes",
-            "Caxias do Sul", "Sorocaba", "Joinville", "Natal"
+            "Caxias do Sul", "Sorocaba", "Joinville", "Natal",
+            "Aracaju", "São Luís", "Manaus", "Porto Alegre", "Palmas", "Maceió", "Belém",
+            "Goiânia", "Brasília", "Recife", "Salvador", "Fortaleza", "Teresina"
         ],
         'estado': [
-            'SP', 'SP', 'MG', 'SP', 'PR', 'SP', 'BA', 'MT', 'GO', 'PR', 'MG', 'RJ', 'RJ', 'RS', 'SP', 'SC', 'RN'
+            'SP', 'SP', 'MG', 'SP', 'PR', 'SP', 'BA', 'MT', 'GO', 'PR', 'MG', 'RJ', 'RJ', 'RS', 'SP', 'SC', 'RN',
+            'SE', 'MA', 'AM', 'RS', 'TO', 'AL', 'PA', 'GO', 'DF', 'PE', 'BA', 'CE', 'PI'
         ],
         'lat': [
             -22.9099, -21.1762, -18.918, -23.9634, -23.3106, -23.1794, -12.2464, -15.5989,
-            -16.3275, -23.424, -21.763, -22.8889, -21.7583, -29.1672, -23.498, -26.304, -5.7947
+            -16.3275, -23.424, -21.763, -22.8889, -21.7583, -29.1672, -23.498, -26.304, -5.7947,
+            -10.9472, -2.5367, -3.1190, -30.0346, -10.212, -9.665, -1.4558, -16.686, -15.794,
+            -8.057, -12.971, -3.717, -5.091
         ],
         'lon': [
             -47.0626, -47.8823, -48.2772, -46.3353, -51.1627, -45.8869, -38.9668, -56.0949,
-            -48.9566, -51.9389, -43.345, -43.107, -41.3328, -51.1778, -47.4488, -48.847, -35.2114
+            -48.9566, -51.9389, -43.345, -43.107, -41.3328, -51.1778, -47.4488, -48.847, -35.2114,
+            -37.073, -44.301, -60.021, -51.217, -48.336, -35.735, -48.503, -49.264, -47.882,
+            -34.881, -38.501, -38.543, -42.802
+        ],
+        'tipo_estacao': [
+            'Automática', 'Automática', 'Convencional', 'Automática', 'Convencional',
+            'Automática', 'Convencional', 'Automática', 'Convencional', 'Automática',
+            'Convencional', 'Automática', 'Convencional', 'Automática', 'Automática',
+            'Convencional', 'Automática', 'Convencional', 'Automática', 'Automática',
+            'Automática', 'Convencional', 'Automática', 'Convencional', 'Automática',
+            'Automática', 'Automática', 'Convencional', 'Convencional', 'Automática'
         ]
     })
 
 def generate_all_brazil_data():
-    """Gera um DataFrame simulado com dados de precipitação para todos os municípios do Brasil."""
+    """Gera um DataFrame simulado com dados de precipitação para todas as estações simuladas."""
     municipios_df = generate_municipios_list()
     municipios_simulados = municipios_df['cidade'].tolist()
     
@@ -145,7 +160,7 @@ if opcao == "Previsão Individual":
 # --- Seção: Mapa e Download de Dados ---
 elif opcao == "Mapa e Download de Dados":
     st.header("🗺️ Mapa Interativo do Brasil")
-    st.markdown("Passe o mouse sobre os estados para visualizar. Os pontos azuis representam as estações de coleta simuladas.")
+    st.markdown("Passe o mouse sobre os estados para visualizar. Os pontos representam as estações de coleta simuladas.")
     
     # URL pública do GeoJSON para os estados do Brasil
     brazil_geojson_url = 'https://raw.githubusercontent.com/codeforamerica/click-that-hood/master/geojson/brazil-states.geojson'
@@ -173,16 +188,20 @@ elif opcao == "Mapa e Download de Dados":
     )
     
     # Adiciona a visualização de pontos de cidades de médio porte
-    cidades_medio_porte = generate_municipios_list()
+    estacoes_df = generate_municipios_list()
+    
+    # Mapeia as cores por tipo de estação
+    cor_map = {'Automática': 'red', 'Convencional': 'blue'}
+    estacoes_df['cor'] = estacoes_df['tipo_estacao'].map(cor_map)
     
     fig_mapa.add_trace(go.Scattergeo(
-        lon = cidades_medio_porte['lon'],
-        lat = cidades_medio_porte['lat'],
-        text = cidades_medio_porte['cidade'] + ", " + cidades_medio_porte['estado'],
+        lon = estacoes_df['lon'],
+        lat = estacoes_df['lat'],
+        text = estacoes_df['cidade'] + ", " + estacoes_df['estado'],
         mode = 'markers',
         marker = dict(
             size = 8,
-            color = 'blue',
+            color = estacoes_df['cor'],
             symbol = 'circle',
             opacity = 0.8,
         ),
@@ -193,7 +212,7 @@ elif opcao == "Mapa e Download de Dados":
 
     st.markdown("---")
     st.header("📥 Download de Dados Completos")
-    st.markdown("Clique no botão para baixar um arquivo CSV com dados diários simulados para todos os municípios.")
+    st.markdown("Clique no botão para baixar um arquivo CSV com dados diários simulados para todas as estações.")
 
     if st.button(f"📥 Baixar Dados de Todas as Estações", type="primary"):
         with st.spinner('Gerando arquivo...'):
