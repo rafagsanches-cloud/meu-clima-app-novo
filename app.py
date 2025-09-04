@@ -16,19 +16,35 @@ st.set_page_config(
 )
 
 st.title("🌧️ Sistema de Previsão Climática - Brasil")
-st.markdown("### Mapa de Previsão de Chuva")
+st.markdown("### Previsão de Volume Diário de Chuva (mm)")
 
 # Sidebar para navegação
 st.sidebar.title("Navegação")
 opcao = st.sidebar.selectbox(
     "Escolha uma opção:",
-    ["Mapa e Download de Dados", "Sobre o Sistema"]
+    ["Previsão Individual", "Mapa e Download de Dados", "Upload de CSV", "Sobre o Sistema"]
 )
+
+def make_prediction(data):
+    """Simula uma previsão de precipitação com base nos dados de entrada."""
+    base_precip = np.random.uniform(0, 15)
+    if data.get("temp_max", 25) > 30:
+        base_precip *= 1.5
+    if data.get("umidade", 50) > 70:
+        base_precip *= 1.3
+    
+    # Simula variações por local
+    municipio = data.get("municipio", "Itirapina")
+    if municipio == "São Paulo":
+        base_precip *= 1.2
+    elif municipio == "Rio de Janeiro":
+        base_precip *= 1.1
+    
+    return max(0, base_precip)
 
 def generate_all_brazil_data():
     """Gera um DataFrame simulado com dados de precipitação para todos os municípios do Brasil."""
     # Simula uma lista de municípios brasileiros
-    # Em uma aplicação real, esta lista seria carregada de um banco de dados
     municipios_simulados = [
         "São Paulo", "Rio de Janeiro", "Belo Horizonte", "Salvador", "Fortaleza", 
         "Curitiba", "Manaus", "Recife", "Porto Alegre", "Brasília"
@@ -52,17 +68,74 @@ def generate_all_brazil_data():
             
     return pd.DataFrame(data_list)
 
-if opcao == "Mapa e Download de Dados":
-    st.header("🗺️ Mapa do Brasil")
+# --- Seção: Previsão Individual ---
+if opcao == "Previsão Individual":
+    st.header("📊 Previsão Individual")
+    
+    municipios = ["Itirapina", "São Paulo", "Rio de Janeiro"]
+    municipio_selecionado = st.selectbox("Selecione o Município", municipios)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Dados Meteorológicos")
+        temp_max = st.slider("Temperatura Máxima (°C)", -5.0, 45.0, 25.0, 0.1)
+        temp_min = st.slider("Temperatura Mínima (°C)", -10.0, 35.0, 15.0, 0.1)
+        umidade = st.slider("Umidade Relativa (%)", 0.0, 100.0, 60.0, 1.0)
+        pressao = st.slider("Pressão Atmosférica (hPa)", 900.0, 1050.0, 1013.0, 0.1)
+        
+    with col2:
+        st.subheader("Dados Complementares")
+        vel_vento = st.slider("Velocidade do Vento (m/s)", 0.0, 30.0, 5.0, 0.1)
+        rad_solar = st.slider("Radiação Solar (MJ/m²)", 0.0, 35.0, 20.0, 0.1)
+        data_previsao = st.date_input("Data da Previsão", datetime.now())
+        
+    if st.button("🔮 Fazer Previsão", type="primary"):
+        dados_input = {
+            "municipio": municipio_selecionado,
+            "temp_max": temp_max,
+            "temp_min": temp_min,
+            "umidade": umidade,
+            "pressao": pressao,
+            "vel_vento": vel_vento,
+            "rad_solar": rad_solar
+        }
+        
+        previsao = make_prediction(dados_input)
+        
+        st.success(f"🌧️ Previsão de Precipitação para {municipio_selecionado}: **{previsao:.2f} mm**")
+        
+        if previsao < 1:
+            st.info("☀️ Dia seco - Precipitação muito baixa")
+        elif previsao < 5:
+            st.info("🌤️ Chuva leve - Precipitação baixa")
+        elif previsao < 15:
+            st.warning("🌦️ Chuva moderada - Precipitação moderada")
+        else:
+            st.error("⛈️ Chuva intensa - Precipitação alta")
+            
+        fig = go.Figure(data=[
+            go.Bar(x=["Previsão"], y=[previsao], marker_color="lightblue")
+        ])
+        fig.update_layout(
+            title="Volume de Chuva Previsto",
+            yaxis_title="Precipitação (mm)",
+            showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+# --- Seção: Mapa e Download de Dados ---
+elif opcao == "Mapa e Download de Dados":
+    st.header("🗺️ Mapa Interativo do Brasil")
+    st.markdown("Passe o mouse sobre os estados para visualizá-los. Clique no botão abaixo para baixar dados de todos os municípios.")
 
     # URL pública do GeoJSON para os estados do Brasil
     brazil_geojson_url = 'https://raw.githubusercontent.com/codeforamerica/click-that-hood/master/geojson/brazil-states.geojson'
     
-    # Cria um DataFrame vazio para desenhar o mapa.
-    # Isso garante que o mapa seja exibido de forma limpa, sem dados.
+    # Cria um DataFrame com dados simulados e variados para colorir o mapa
     brazil_df = pd.DataFrame({
         "Estado": ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"],
-        "Valor": [0] * 27
+        "Simulacao_Precipitacao": np.random.uniform(5, 25, 27) # Dados variados para colorir
     })
     
     fig_mapa = px.choropleth(
@@ -70,24 +143,22 @@ if opcao == "Mapa e Download de Dados":
         geojson=brazil_geojson_url,
         locations="Estado",
         locationmode="geojson-id",
-        title="Mapa do Brasil (Estados)",
-        color="Valor",
+        title="Previsão de Chuva por Estado (Simulação)",
+        color="Simulacao_Precipitacao",
         color_continuous_scale="Viridis",
-        labels={'Valor':'Simulação'},
+        labels={'Simulacao_Precipitacao':'Simulação (mm)'},
         hover_name="Estado"
     )
     fig_mapa.update_geos(fitbounds="locations", visible=False)
     fig_mapa.update_layout(
-        coloraxis_showscale=False,  # Remove a barra de cores
         margin={"r":0,"t":50,"l":0,"b":0}
     )
     st.plotly_chart(fig_mapa, use_container_width=True)
-    
+
     st.markdown("---")
-    st.header("📥 Download de Dados")
-    
-    st.markdown("Clique no botão abaixo para baixar um arquivo CSV com dados diários simulados para todos os municípios do Brasil.")
-    
+    st.header("📥 Download de Dados Completos")
+    st.markdown("Clique no botão para baixar um arquivo CSV com dados diários simulados para todos os municípios.")
+
     if st.button(f"📥 Baixar Dados de Todos os Municípios", type="primary"):
         with st.spinner('Gerando arquivo...'):
             df_dados_completos = generate_all_brazil_data()
@@ -97,9 +168,47 @@ if opcao == "Mapa e Download de Dados":
             st.markdown(href, unsafe_allow_html=True)
         st.success("Arquivo gerado com sucesso!")
 
+# --- Seção: Upload de CSV ---
+elif opcao == "Upload de CSV":
+    st.header("📁 Upload de Arquivo CSV")
+    st.markdown("""
+    **Formato esperado do CSV:**
+    - Colunas: `data`, `temp_max`, `temp_min`, `umidade`, `pressao`, `vel_vento`, `rad_solar`
+    - Data no formato: `YYYY-MM-DD`
+    """)
+    uploaded_file = st.file_uploader("Escolha um arquivo CSV", type="csv")
+    
+    if uploaded_file is not None:
+        try:
+            df = pd.read_csv(uploaded_file)
+            st.success("Arquivo carregado com sucesso!")
+            st.subheader("Preview dos Dados")
+            st.dataframe(df.head())
+            
+            if st.button("🔮 Processar Previsões", type="primary"):
+                with st.spinner('Processando previsões...'):
+                    previsoes = [make_prediction(row.to_dict()) for _, row in df.iterrows()]
+                df["previsao_precipitacao"] = previsoes
+                st.subheader("Resultados das Previsões")
+                st.dataframe(df)
+                
+                if "data" in df.columns:
+                    df["data"] = pd.to_datetime(df["data"])
+                    fig = px.line(df, x="data", y="previsao_precipitacao", 
+                                  title="Previsão de Precipitação ao Longo do Tempo")
+                    fig.update_layout(yaxis_title="Precipitação (mm)")
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                csv_file = df.to_csv(index=False)
+                b64 = base64.b64encode(csv_file.encode()).decode()
+                href = f"<a href=\"data:file/csv;base64,{b64}\" download=\"previsoes_clima.csv\">📥 Download dos Resultados</a>"
+                st.markdown(href, unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"Erro ao processar arquivo: {str(e)}")
+
+# --- Seção: Sobre o Sistema ---
 else:  # Sobre o Sistema
     st.header("ℹ️ Sobre o Sistema")
-    
     st.markdown("""
     ### Sistema de Previsão Climática para o Brasil
     
@@ -125,7 +234,6 @@ else:  # Sobre o Sistema
     # --- Seção de Créditos ---
     st.markdown("---")
     st.header("👨‍💻 Sobre o Autor")
-    
     st.markdown("""
     Este projeto foi desenvolvido por:
     - **Nome:** Rafael Grecco Sanches
