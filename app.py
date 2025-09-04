@@ -27,29 +27,29 @@ opcao = st.sidebar.selectbox(
 
 # Functions for data simulation
 def make_prediction_series(data, days=1):
-    """Simulates a precipitation forecast for a series of days."""
+    """Simulates a precipitation, temperature, and humidity forecast for a series of days."""
     predictions = []
     dates = [datetime.now() + timedelta(days=i) for i in range(days)]
     
-    for _ in range(days):
+    for i in range(days):
+        # Simulate based on input data
         base_precip = np.random.uniform(0, 15)
-        if data.get("temp_max", 25) > 30:
-            base_precip *= 1.5
-        if data.get("umidade", 50) > 70:
-            base_precip *= 1.3
-        
-        municipio = data.get("municipio", "Itirapina")
-        if municipio == "São Paulo":
-            base_precip *= 1.2
-        elif municipio == "Rio de Janeiro":
-            base_precip *= 1.1
-        
-        predictions.append(max(0, base_precip))
-        
-    return pd.DataFrame({
-        "data": dates,
-        "precipitacao_mm": predictions
-    })
+        base_temp = data.get("temp_max", 25)
+        base_umidade = data.get("umidade", 60)
+
+        # Add some variation for each day
+        precipitacao = max(0, base_precip + np.random.uniform(-5, 5))
+        temperatura_media = max(0, base_temp + np.random.uniform(-3, 3))
+        umidade_relativa = max(0, min(100, base_umidade + np.random.uniform(-10, 10)))
+
+        predictions.append({
+            "data": dates[i].strftime("%Y-%m-%d"),
+            "precipitacao_mm": precipitacao,
+            "temperatura_media": temperatura_media,
+            "umidade_relativa": umidade_relativa
+        })
+    
+    return pd.DataFrame(predictions)
 
 def generate_municipios_list():
     """Generates a simulated list of municipalities and their coordinates, including SP cities."""
@@ -171,22 +171,82 @@ if opcao == "Previsão Individual":
         
         previsoes_df = make_prediction_series(dados_input, days=dias_previsao)
         
-        st.subheader(f"Previsão de Precipitação para os Próximos {dias_previsao} Dias")
+        st.subheader(f"📊 Análise Detalhada para {municipio_selecionado}")
         st.dataframe(previsoes_df)
-        
-        fig = px.line(
+
+        # Gráfico de Linha (Tendência)
+        st.markdown("---")
+        st.subheader("📈 Gráfico de Tendência da Precipitação")
+        fig_line_precip = px.line(
             previsoes_df, 
             x="data", 
             y="precipitacao_mm",
             markers=True,
-            title="Tendência de Precipitação",
+            title=f"Tendência Diária de Chuva para {municipio_selecionado}",
+            color_discrete_sequence=["#0077b6"]
         )
-        fig.update_layout(
-            xaxis_title="Data",
-            yaxis_title="Precipitação (mm)"
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        fig_line_precip.update_layout(xaxis_title="Data", yaxis_title="Precipitação (mm)")
+        st.plotly_chart(fig_line_precip, use_container_width=True)
 
+        # Gráfico de Barras (Volume Diário)
+        st.markdown("---")
+        st.subheader("📊 Gráfico de Volume de Chuva por Dia")
+        fig_bar_precip = px.bar(
+            previsoes_df,
+            x="data",
+            y="precipitacao_mm",
+            title=f"Volume de Chuva Previsto por Dia para {municipio_selecionado}",
+            color="precipitacao_mm",
+            color_continuous_scale=px.colors.sequential.Teal
+        )
+        fig_bar_precip.update_layout(xaxis_title="Data", yaxis_title="Precipitação (mm)")
+        st.plotly_chart(fig_bar_precip, use_container_width=True)
+
+        # Gráfico Combinado (Precipitação e Temperatura)
+        st.markdown("---")
+        st.subheader("📉 Gráfico Combinado de Precipitação e Temperatura")
+        fig_combo = go.Figure()
+        
+        # Adiciona a barra para precipitação
+        fig_combo.add_trace(go.Bar(
+            x=previsoes_df["data"],
+            y=previsoes_df["precipitacao_mm"],
+            name="Precipitação (mm)",
+            marker_color="#005f73"
+        ))
+        
+        # Adiciona a linha para temperatura
+        fig_combo.add_trace(go.Scatter(
+            x=previsoes_df["data"],
+            y=previsoes_df["temperatura_media"],
+            name="Temperatura Média (°C)",
+            yaxis="y2",
+            line=dict(color="#d00000", width=3)
+        ))
+        
+        fig_combo.update_layout(
+            title=f"Precipitação e Temperatura Média por Dia para {municipio_selecionado}",
+            yaxis=dict(title="Precipitação (mm)"),
+            yaxis2=dict(
+                title="Temperatura Média (°C)",
+                overlaying="y",
+                side="right",
+                showgrid=False
+            ),
+            legend=dict(x=0.01, y=0.99)
+        )
+        st.plotly_chart(fig_combo, use_container_width=True)
+
+        # Gráfico Estatístico (Box Plot)
+        st.markdown("---")
+        st.subheader("📦 Análise Estatística da Precipitação")
+        fig_box = px.box(
+            previsoes_df,
+            y="precipitacao_mm",
+            title=f"Distribuição da Precipitação para {municipio_selecionado}"
+        )
+        fig_box.update_layout(yaxis_title="Precipitação (mm)")
+        st.plotly_chart(fig_box, use_container_width=True)
 
 # --- Section: Data Analysis and Forecasts ---
 elif opcao == "Análise de Dados e Previsões":
@@ -389,4 +449,4 @@ else:  # Sobre o Sistema
 
 # Footer
 st.markdown("---")
-st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.3 | **Última atualização:** 2024")
+st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.4 | **Última atualização:** 2024")
