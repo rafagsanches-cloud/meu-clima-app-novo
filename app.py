@@ -47,7 +47,13 @@ def generate_all_brazil_data():
     # Simula uma lista de municípios brasileiros
     municipios_simulados = [
         "São Paulo", "Rio de Janeiro", "Belo Horizonte", "Salvador", "Fortaleza", 
-        "Curitiba", "Manaus", "Recife", "Porto Alegre", "Brasília"
+        "Curitiba", "Manaus", "Recife", "Porto Alegre", "Brasília", "Campinas",
+        "Goiânia", "Belém", "Guarulhos", "São Luís", "São Gonçalo", "Maceió", "Teresina",
+        "Campo Grande", "Natal", "Duque de Caxias", "Nova Iguaçu", "São Bernardo do Campo",
+        "João Pessoa", "Santo André", "Osasco", "Jaboatão dos Guararapes", "Contagem",
+        "Uberlândia", "Ribeirão Preto", "Sorocaba", "Londrina", "Aracaju", "Joinville",
+        "Cuiabá", "Ananindeua", "Juiz de Fora", "Niterói", "Campos dos Goytacazes",
+        "Caxias do Sul", "Santos", "Mauá", "Vila Velha", "Aparecida de Goiânia"
     ]
     
     # Cria uma lista de datas para 30 dias
@@ -72,8 +78,8 @@ def generate_all_brazil_data():
 if opcao == "Previsão Individual":
     st.header("📊 Previsão Individual")
     
-    municipios = ["Itirapina", "São Paulo", "Rio de Janeiro"]
-    municipio_selecionado = st.selectbox("Selecione o Município", municipios)
+    municipios_list = generate_all_brazil_data()["municipio"].unique().tolist()
+    municipio_selecionado = st.selectbox("Selecione o Município (com barra de rolagem)", municipios_list)
     
     col1, col2 = st.columns(2)
     
@@ -127,12 +133,12 @@ if opcao == "Previsão Individual":
 # --- Seção: Mapa e Download de Dados ---
 elif opcao == "Mapa e Download de Dados":
     st.header("🗺️ Mapa Interativo do Brasil")
-    st.markdown("Passe o mouse sobre os estados para visualizá-los. Clique no botão abaixo para baixar dados de todos os municípios.")
+    st.markdown("Passe o mouse sobre os estados para visualizar. Clique no botão para baixar dados de todos os municípios.")
 
     # URL pública do GeoJSON para os estados do Brasil
     brazil_geojson_url = 'https://raw.githubusercontent.com/codeforamerica/click-that-hood/master/geojson/brazil-states.geojson'
     
-    # Cria um DataFrame com dados simulados e variados para colorir o mapa
+    # Cria um DataFrame com dados simulados para colorir o mapa
     brazil_df = pd.DataFrame({
         "Estado": ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"],
         "Simulacao_Precipitacao": np.random.uniform(5, 25, 27) # Dados variados para colorir
