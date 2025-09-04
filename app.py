@@ -138,14 +138,14 @@ elif opcao == "Mapa e Download de Dados":
     # URL pública do GeoJSON para os estados do Brasil
     brazil_geojson_url = 'https://raw.githubusercontent.com/codeforamerica/click-that-hood/master/geojson/brazil-states.geojson'
     
-    # Cria um DataFrame com dados simulados para colorir o mapa
-    brazil_df = pd.DataFrame({
+    # Gera dados simulados para colorir o mapa
+    estado_data = pd.DataFrame({
         "Estado": ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"],
-        "Simulacao_Precipitacao": np.random.uniform(5, 25, 27) # Dados variados para colorir
+        "Simulacao_Precipitacao": np.random.uniform(5, 25, 27)
     })
     
     fig_mapa = px.choropleth(
-        brazil_df,
+        estado_data,
         geojson=brazil_geojson_url,
         locations="Estado",
         locationmode="geojson-id",
@@ -159,6 +159,28 @@ elif opcao == "Mapa e Download de Dados":
     fig_mapa.update_layout(
         margin={"r":0,"t":50,"l":0,"b":0}
     )
+    
+    # Adiciona a visualização de pontos de cidades de médio porte
+    cidades_medio_porte = pd.DataFrame({
+        'cidade': ['Campinas', 'Ribeirão Preto', 'Uberlândia', 'Santos', 'Londrina'],
+        'lat': [-22.9099, -21.1762, -18.918, -23.9634, -23.3106],
+        'lon': [-47.0626, -47.8823, -48.2772, -46.3353, -51.1627]
+    })
+    
+    fig_mapa.add_trace(go.Scattergeo(
+        lon = cidades_medio_porte['lon'],
+        lat = cidades_medio_porte['lat'],
+        text = cidades_medio_porte['cidade'],
+        mode = 'markers',
+        marker = dict(
+            size = 10,
+            color = 'blue',
+            symbol = 'circle',
+            opacity = 0.8,
+        ),
+        name="Estações (Simulação)"
+    ))
+
     st.plotly_chart(fig_mapa, use_container_width=True)
 
     st.markdown("---")
