@@ -34,7 +34,6 @@ def make_prediction(data):
     if data.get("umidade", 50) > 70:
         base_precip *= 1.3
     
-    # Simula variações por local
     municipio = data.get("municipio", "Itirapina")
     if municipio == "São Paulo":
         base_precip *= 1.2
@@ -44,38 +43,35 @@ def make_prediction(data):
     return max(0, base_precip)
 
 def generate_municipios_list():
-    """Gera uma lista simulada de municípios de médio porte e suas coordenadas."""
+    """Gera uma lista simulada de municípios e suas coordenadas, incluindo cidades de SP."""
     return pd.DataFrame({
         'cidade': [
             "Campinas", "Ribeirão Preto", "Uberlândia", "Santos", "Londrina",
             "São José dos Campos", "Feira de Santana", "Cuiabá", "Anápolis",
             "Maringá", "Juiz de Fora", "Niterói", "Campos dos Goytacazes",
             "Caxias do Sul", "Sorocaba", "Joinville", "Natal",
-            "Aracaju", "São Luís", "Manaus", "Porto Alegre", "Palmas", "Maceió", "Belém",
-            "Goiânia", "Brasília", "Recife", "Salvador", "Fortaleza", "Teresina"
+            "Araraquara", "Bauru", "Franca", "Jundiaí", "Piracicaba",
+            "Presidente Prudente", "São Carlos", "Taubaté"
         ],
         'estado': [
             'SP', 'SP', 'MG', 'SP', 'PR', 'SP', 'BA', 'MT', 'GO', 'PR', 'MG', 'RJ', 'RJ', 'RS', 'SP', 'SC', 'RN',
-            'SE', 'MA', 'AM', 'RS', 'TO', 'AL', 'PA', 'GO', 'DF', 'PE', 'BA', 'CE', 'PI'
+            'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'
         ],
         'lat': [
             -22.9099, -21.1762, -18.918, -23.9634, -23.3106, -23.1794, -12.2464, -15.5989,
             -16.3275, -23.424, -21.763, -22.8889, -21.7583, -29.1672, -23.498, -26.304, -5.7947,
-            -10.9472, -2.5367, -3.1190, -30.0346, -10.212, -9.665, -1.4558, -16.686, -15.794,
-            -8.057, -12.971, -3.717, -5.091
+            -21.807, -22.316, -20.538, -23.186, -22.721, -22.124, -22.016, -23.023
         ],
         'lon': [
             -47.0626, -47.8823, -48.2772, -46.3353, -51.1627, -45.8869, -38.9668, -56.0949,
             -48.9566, -51.9389, -43.345, -43.107, -41.3328, -51.1778, -47.4488, -48.847, -35.2114,
-            -37.073, -44.301, -60.021, -51.217, -48.336, -35.735, -48.503, -49.264, -47.882,
-            -34.881, -38.501, -38.543, -42.802
+            -48.188, -49.066, -47.400, -46.883, -47.649, -51.401, -47.893, -45.556
         ],
         'tipo_estacao': [
             'Automática', 'Automática', 'Convencional', 'Automática', 'Convencional',
             'Automática', 'Convencional', 'Automática', 'Convencional', 'Automática',
             'Convencional', 'Automática', 'Convencional', 'Automática', 'Automática',
-            'Convencional', 'Automática', 'Convencional', 'Automática', 'Automática',
-            'Automática', 'Convencional', 'Automática', 'Convencional', 'Automática',
+            'Convencional', 'Automática', 'Automática', 'Convencional', 'Convencional',
             'Automática', 'Automática', 'Convencional', 'Convencional', 'Automática'
         ]
     })
@@ -160,55 +156,45 @@ if opcao == "Previsão Individual":
 # --- Seção: Mapa e Download de Dados ---
 elif opcao == "Mapa e Download de Dados":
     st.header("🗺️ Mapa Interativo do Brasil")
-    st.markdown("Passe o mouse sobre os estados para visualizar. Os pontos representam as estações de coleta simuladas.")
-    
-    # URL pública do GeoJSON para os estados do Brasil
-    brazil_geojson_url = 'https://raw.githubusercontent.com/codeforamerica/click-that-hood/master/geojson/brazil-states.geojson'
-    
-    # Gera dados simulados para colorir o mapa
-    estado_data = pd.DataFrame({
-        "Estado": ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"],
-        "Simulacao_Precipitacao": np.random.uniform(5, 25, 27) # Dados variados para colorir
-    })
-    
-    fig_mapa = px.choropleth(
-        estado_data,
-        geojson=brazil_geojson_url,
-        locations="Estado",
-        locationmode="geojson-id",
-        title="Previsão de Chuva por Estado (Simulação)",
-        color="Simulacao_Precipitacao",
-        color_continuous_scale="Viridis",
-        labels={'Simulacao_Precipitacao':'Simulação (mm)'},
-        hover_name="Estado"
-    )
-    fig_mapa.update_geos(fitbounds="locations", visible=False)
-    fig_mapa.update_layout(
-        margin={"r":0,"t":50,"l":0,"b":0}
-    )
-    
-    # Adiciona a visualização de pontos de cidades de médio porte
+    st.markdown("Passe o mouse sobre os pontos para ver o nome da estação. A cor indica o tipo de estação.")
+
     estacoes_df = generate_municipios_list()
     
-    # Mapeia as cores por tipo de estação
-    cor_map = {'Automática': 'red', 'Convencional': 'blue'}
-    estacoes_df['cor'] = estacoes_df['tipo_estacao'].map(cor_map)
+    # Adiciona a visualização de pontos de cidades de médio porte em um mapa do Brasil
+    fig_mapa = px.scatter_geo(
+        estacoes_df,
+        lat='lat',
+        lon='lon',
+        hover_name='cidade',
+        color='tipo_estacao',
+        title='Localização das Estações Meteorológicas (Simulação)',
+        scope='south america'
+    )
     
-    fig_mapa.add_trace(go.Scattergeo(
-        lon = estacoes_df['lon'],
-        lat = estacoes_df['lat'],
-        text = estacoes_df['cidade'] + ", " + estacoes_df['estado'],
-        mode = 'markers',
-        marker = dict(
-            size = 8,
-            color = estacoes_df['cor'],
-            symbol = 'circle',
-            opacity = 0.8,
-        ),
-        name="Estações (Simulação)"
-    ))
+    fig_mapa.update_layout(
+        geo_scope='south america',
+        geo_resolution=50,
+        geo_showsubunits=True,
+        geo_subunitcolor='lightgrey',
+        geo_showcountries=True,
+        geo_countrycolor='black',
+        geo_bgcolor='white'
+    )
+    
+    # Foca o mapa no Brasil
+    fig_mapa.update_geos(
+        lonaxis_range=[-75, -30],
+        lataxis_range=[-35, 5],
+        center={"lat": -14, "lon": -55}
+    )
 
     st.plotly_chart(fig_mapa, use_container_width=True)
+    
+    # Barra de rolagem para os municípios de São Paulo
+    st.header("Municípios de São Paulo")
+    sp_municipios = estacoes_df[estacoes_df['estado'] == 'SP']['cidade'].tolist()
+    st.selectbox("Selecione um município para mais detalhes (simulação)", sp_municipios)
+
 
     st.markdown("---")
     st.header("📥 Download de Dados Completos")
