@@ -408,6 +408,17 @@ else:  # Sobre o Sistema
     except Exception as e:
         st.error(f"Erro ao gerar o gráfico de validação: {e}")
 
+    st.markdown("---")
+    st.subheader("👤 Sobre o Autor")
+    st.markdown("""
+    Este sistema foi desenvolvido por **Rafael Grecco Sanches**, com base em sua pesquisa na área de Machine Learning aplicada à previsão climática. Você pode saber mais sobre o autor e seu trabalho acadêmico nos links abaixo:
+
+    - **Currículo Lattes:** [https://lattes.cnpq.br/XXXXXXXXXXXXXXX](https://lattes.cnpq.br/XXXXXXXXXXXXXXX)
+    - **Google Acadêmico:** [https://scholar.google.com/citations?user=XXXXXXXXXXXXXXX](https://scholar.google.com/citations?user=XXXXXXXXXXXXXXX)
+
+    *Nota: Substitua os URLs acima pelos seus links reais.*
+    """)
+
 # Footer
 st.markdown("---")
-st.markdown("**Desenvolvido por:** [Rafael Grecco Sanches] | **Versão:** 1.7 | **Última atualização:** 2024")
+st.markdown("**Desenvolvido por:** Rafael Grecco Sanches | **Versão:** 1.7 | **Última atualização:** 2024")
