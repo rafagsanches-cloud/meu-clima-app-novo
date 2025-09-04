@@ -416,7 +416,7 @@ else:  # Sobre o Sistema
     - **Currículo Lattes:** [http://lattes.cnpq.br/2395726310692375](http://lattes.cnpq.br/2395726310692375)
     - **Google Acadêmico:** [https://scholar.google.com/citations?user=hCerscwAAAAJ&hl=pt-BR](https://scholar.google.com/citations?user=hCerscwAAAAJ&hl=pt-BR)
     - **LinkedIn:** [www.linkedin.com/in/rafael-grecco-sanches-202807226](www.linkedin.com/in/rafael-grecco-sanches-202807226)
-    *Nota: Substitua os URLs acima pelos seus links reais.*
+  
     """)
 
 # Footer
