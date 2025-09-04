@@ -27,20 +27,26 @@ opcao = st.sidebar.selectbox(
 
 # Functions for data simulation
 def make_prediction_series(data, days=1):
-    """Simulates a precipitation, temperature, and humidity forecast for a series of days."""
+    """Simulates a precipitation, temperature, and humidity forecast based on XGBoost logic for a series of days."""
     predictions = []
     dates = [datetime.now() + timedelta(days=i) for i in range(days)]
     
     for i in range(days):
-        # Simulate based on input data
-        base_precip = np.random.uniform(0, 15)
-        base_temp = data.get("temp_max", 25)
-        base_umidade = data.get("umidade", 60)
+        # Simulate base precipitation mimicking XGBoost logic
+        base_precip = np.random.uniform(0.5, 5) # Low base
+        
+        # Add factors based on input variables, simulating feature importance
+        temp_factor = 1 + (data.get("temp_max", 25) - 25) * 0.1
+        umidade_factor = 1 + (data.get("umidade", 60) - 60) * 0.05
+        
+        # Combine factors with a time-series trend (e.g., sine wave)
+        time_factor = np.sin(np.pi * 2 * i / days) * 2 + 1
+        
+        precipitacao = max(0, base_precip * temp_factor * umidade_factor * time_factor + np.random.uniform(-1, 1))
 
-        # Add some variation for each day
-        precipitacao = max(0, base_precip + np.random.uniform(-5, 5))
-        temperatura_media = max(0, base_temp + np.random.uniform(-3, 3))
-        umidade_relativa = max(0, min(100, base_umidade + np.random.uniform(-10, 10)))
+        # Simulate other variables
+        temperatura_media = max(0, data.get("temp_max", 25) + np.random.uniform(-3, 3))
+        umidade_relativa = max(0, min(100, data.get("umidade", 60) + np.random.uniform(-5, 5)))
 
         predictions.append({
             "data": dates[i].strftime("%Y-%m-%d"),
@@ -449,4 +455,4 @@ else:  # Sobre o Sistema
 
 # Footer
 st.markdown("---")
-st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.4 | **Última atualização:** 2024")
+st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.5 | **Última atualização:** 2024")
