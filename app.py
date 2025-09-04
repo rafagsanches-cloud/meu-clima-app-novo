@@ -16,74 +16,72 @@ st.set_page_config(
 )
 
 st.title("🌧️ Sistema de Previsão Climática - Brasil")
-st.markdown("### Previsão de Volume Diário de Chuva (mm)")
+st.markdown("### Mapa Interativo de Previsão de Chuva")
 
 # Sidebar para navegação
 st.sidebar.title("Navegação")
 opcao = st.sidebar.selectbox(
     "Escolha uma opção:",
-    ["Previsão Individual", "Upload de CSV", "Sobre o Sistema"]
+    ["Mapa de Previsão", "Upload de CSV", "Sobre o Sistema"]
 )
 
-def make_prediction(data):
-    """Simula uma previsão de precipitação com base nos dados de entrada."""
-    base_precip = np.random.uniform(0, 15)
-    if data.get("temp_max", 25) > 30:
-        base_precip *= 1.5
-    if data.get("umidade", 50) > 70:
-        base_precip *= 1.3
-    return max(0, base_precip)
+def generate_municipio_data(municipio_name):
+    """Gera um DataFrame de exemplo para um município."""
+    dates = pd.date_range(end=datetime.now(), periods=30, freq="D")
+    precip_real = np.random.exponential(3, 30)
+    
+    # Simula dados diferentes por município
+    np.random.seed(hash(municipio_name) % 1000)
+    precip_prev = precip_real + np.random.normal(0, 0.5, 30)
+    
+    df = pd.DataFrame({
+        "Data": dates,
+        "Precipitação_mm": precip_prev
+    })
+    return df
 
-if opcao == "Previsão Individual":
-    st.header("📊 Previsão Individual")
+if opcao == "Mapa de Previsão":
+    st.header("🗺️ Mapa Interativo de Previsão")
+
+    # URL pública do GeoJSON para os estados do Brasil
+    # Este arquivo é usado para desenhar o mapa
+    brazil_geojson_url = 'https://raw.githubusercontent.com/codeforamerica/click-that-hood/master/geojson/brazil-states.geojson'
     
-    col1, col2 = st.columns(2)
+    # Simula dados de precipitação por estado para o mapa
+    data_mapa = pd.DataFrame({
+        "Estado": ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"],
+        "Precipitação_mm": np.random.uniform(5, 25, 27)
+    })
+
+    # Cria o mapa interativo
+    fig_mapa = px.choropleth(
+        data_mapa,
+        geojson=brazil_geojson_url,
+        locations="Estado",
+        locationmode="geojson-id",
+        color="Precipitação_mm",
+        title="Previsão de Chuva por Estado (Simulação)",
+        hover_name="Estado",
+        color_continuous_scale="Viridis",
+        labels={'Precipitação_mm':'Precipitação (mm)'}
+    )
+    fig_mapa.update_geos(fitbounds="locations", visible=False)
+    fig_mapa.update_layout(margin={"r":0,"t":50,"l":0,"b":0})
+    st.plotly_chart(fig_mapa, use_container_width=True)
     
-    with col1:
-        st.subheader("Dados Meteorológicos")
-        temp_max = st.slider("Temperatura Máxima (°C)", -5.0, 45.0, 25.0, 0.1)
-        temp_min = st.slider("Temperatura Mínima (°C)", -10.0, 35.0, 15.0, 0.1)
-        umidade = st.slider("Umidade Relativa (%)", 0.0, 100.0, 60.0, 1.0)
-        pressao = st.slider("Pressão Atmosférica (hPa)", 900.0, 1050.0, 1013.0, 0.1)
-        
-    with col2:
-        st.subheader("Dados Complementares")
-        vel_vento = st.slider("Velocidade do Vento (m/s)", 0.0, 30.0, 5.0, 0.1)
-        rad_solar = st.slider("Radiação Solar (MJ/m²)", 0.0, 35.0, 20.0, 0.1)
-        data_previsao = st.date_input("Data da Previsão", datetime.now())
-        
-    if st.button("🔮 Fazer Previsão", type="primary"):
-        dados_input = {
-            "temp_max": temp_max,
-            "temp_min": temp_min,
-            "umidade": umidade,
-            "pressao": pressao,
-            "vel_vento": vel_vento,
-            "rad_solar": rad_solar
-        }
-        
-        previsao = make_prediction(dados_input)
-        
-        st.success(f"🌧️ Previsão de Precipitação: **{previsao:.2f} mm**")
-        
-        if previsao < 1:
-            st.info("☀️ Dia seco - Precipitação muito baixa")
-        elif previsao < 5:
-            st.info("🌤️ Chuva leve - Precipitação baixa")
-        elif previsao < 15:
-            st.warning("🌦️ Chuva moderada - Precipitação moderada")
-        else:
-            st.error("⛈️ Chuva intensa - Precipitação alta")
-            
-        fig = go.Figure(data=[
-            go.Bar(x=["Previsão"], y=[previsao], marker_color="lightblue")
-        ])
-        fig.update_layout(
-            title="Volume de Chuva Previsto",
-            yaxis_title="Precipitação (mm)",
-            showlegend=False
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    st.markdown("---")
+    st.header("📥 Download de Dados por Município")
+    
+    # Simulação da lista de municípios
+    municipios_exemplo = ["Itirapina", "São Paulo", "Rio de Janeiro", "Curitiba", "Belo Horizonte"]
+    municipio_selecionado = st.selectbox("Selecione um Município para Download", municipios_exemplo)
+    
+    if st.button(f"📥 Baixar Dados para {municipio_selecionado}", type="primary"):
+        df_dados = generate_municipio_data(municipio_selecionado)
+        csv_file = df_dados.to_csv(index=False)
+        b64 = base64.b64encode(csv_file.encode()).decode()
+        href = f'<a href="data:file/csv;base64,{b64}" download="{municipio_selecionado}_previsao_historica.csv">Clique aqui para baixar o arquivo</a>'
+        st.markdown(href, unsafe_allow_html=True)
 
 elif opcao == "Upload de CSV":
     st.header("📁 Upload de Arquivo CSV")
@@ -177,7 +175,7 @@ else:  # Sobre o Sistema
     fig.update_layout(yaxis_title="Precipitação (mm)")
     st.plotly_chart(fig, use_container_width=True)
     
-    # --- Nova seção de Créditos ---
+    # --- Seção de Créditos ---
     st.markdown("---")
     st.header("👨‍💻 Sobre o Autor")
     
@@ -186,9 +184,9 @@ else:  # Sobre o Sistema
     - **Nome:** Rafael Grecco Sanches
     
     #### Links Profissionais:
-    - **Lattes:** (<http://lattes.cnpq.br/2395726310692375>)
-    - **Google Acadêmico:** (<https://scholar.google.com/citations?user=hCerscwAAAAJ&hl=pt-BR>)
-    - **Outros:** (<www.linkedin.com/in/rafael-grecco-sanches-202807226>)
+    - **Lattes:** [Seu Link do Lattes](<URL DO SEU LATTES>)
+    - **Google Acadêmico:** [Seu Perfil no Google Acadêmico](<URL DO SEU GOOGLE ACADÊMICO>)
+    - **Outros:** [Seu Site ou LinkedIn](<URL DO SEU SITE/LINKEDIN>)
     """)
 
 # Footer
