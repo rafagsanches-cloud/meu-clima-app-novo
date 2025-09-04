@@ -25,6 +25,7 @@ opcao = st.sidebar.selectbox(
     ["Previsão Individual", "Mapa e Download de Dados", "Upload de CSV", "Sobre o Sistema"]
 )
 
+# Funções de simulação de dados
 def make_prediction(data):
     """Simula uma previsão de precipitação com base nos dados de entrada."""
     base_precip = np.random.uniform(0, 15)
@@ -42,21 +43,33 @@ def make_prediction(data):
     
     return max(0, base_precip)
 
+def generate_municipios_list():
+    """Gera uma lista simulada de municípios de médio porte e suas coordenadas."""
+    return pd.DataFrame({
+        'cidade': [
+            "Campinas", "Ribeirão Preto", "Uberlândia", "Santos", "Londrina",
+            "São José dos Campos", "Feira de Santana", "Cuiabá", "Anápolis",
+            "Maringá", "Juiz de Fora", "Niterói", "Campos dos Goytacazes",
+            "Caxias do Sul", "Sorocaba", "Joinville", "Natal"
+        ],
+        'estado': [
+            'SP', 'SP', 'MG', 'SP', 'PR', 'SP', 'BA', 'MT', 'GO', 'PR', 'MG', 'RJ', 'RJ', 'RS', 'SP', 'SC', 'RN'
+        ],
+        'lat': [
+            -22.9099, -21.1762, -18.918, -23.9634, -23.3106, -23.1794, -12.2464, -15.5989,
+            -16.3275, -23.424, -21.763, -22.8889, -21.7583, -29.1672, -23.498, -26.304, -5.7947
+        ],
+        'lon': [
+            -47.0626, -47.8823, -48.2772, -46.3353, -51.1627, -45.8869, -38.9668, -56.0949,
+            -48.9566, -51.9389, -43.345, -43.107, -41.3328, -51.1778, -47.4488, -48.847, -35.2114
+        ]
+    })
+
 def generate_all_brazil_data():
     """Gera um DataFrame simulado com dados de precipitação para todos os municípios do Brasil."""
-    # Simula uma lista de municípios brasileiros
-    municipios_simulados = [
-        "São Paulo", "Rio de Janeiro", "Belo Horizonte", "Salvador", "Fortaleza", 
-        "Curitiba", "Manaus", "Recife", "Porto Alegre", "Brasília", "Campinas",
-        "Goiânia", "Belém", "Guarulhos", "São Luís", "São Gonçalo", "Maceió", "Teresina",
-        "Campo Grande", "Natal", "Duque de Caxias", "Nova Iguaçu", "São Bernardo do Campo",
-        "João Pessoa", "Santo André", "Osasco", "Jaboatão dos Guararapes", "Contagem",
-        "Uberlândia", "Ribeirão Preto", "Sorocaba", "Londrina", "Aracaju", "Joinville",
-        "Cuiabá", "Ananindeua", "Juiz de Fora", "Niterói", "Campos dos Goytacazes",
-        "Caxias do Sul", "Santos", "Mauá", "Vila Velha", "Aparecida de Goiânia"
-    ]
+    municipios_df = generate_municipios_list()
+    municipios_simulados = municipios_df['cidade'].tolist()
     
-    # Cria uma lista de datas para 30 dias
     start_date = datetime.now() - timedelta(days=30)
     dates = [start_date + timedelta(days=i) for i in range(30)]
     
@@ -64,7 +77,6 @@ def generate_all_brazil_data():
     
     for municipio in municipios_simulados:
         for date in dates:
-            # Simula um valor de precipitação
             precipitacao = np.random.uniform(0, 50)
             data_list.append({
                 "municipio": municipio,
@@ -78,8 +90,8 @@ def generate_all_brazil_data():
 if opcao == "Previsão Individual":
     st.header("📊 Previsão Individual")
     
-    municipios_list = generate_all_brazil_data()["municipio"].unique().tolist()
-    municipio_selecionado = st.selectbox("Selecione o Município (com barra de rolagem)", municipios_list)
+    municipios_list = generate_municipios_list()["cidade"].tolist()
+    municipio_selecionado = st.selectbox("Selecione o Município", municipios_list)
     
     col1, col2 = st.columns(2)
     
@@ -133,15 +145,15 @@ if opcao == "Previsão Individual":
 # --- Seção: Mapa e Download de Dados ---
 elif opcao == "Mapa e Download de Dados":
     st.header("🗺️ Mapa Interativo do Brasil")
-    st.markdown("Passe o mouse sobre os estados para visualizar. Clique no botão para baixar dados de todos os municípios.")
-
+    st.markdown("Passe o mouse sobre os estados para visualizar. Os pontos azuis representam as estações de coleta simuladas.")
+    
     # URL pública do GeoJSON para os estados do Brasil
     brazil_geojson_url = 'https://raw.githubusercontent.com/codeforamerica/click-that-hood/master/geojson/brazil-states.geojson'
     
     # Gera dados simulados para colorir o mapa
     estado_data = pd.DataFrame({
         "Estado": ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"],
-        "Simulacao_Precipitacao": np.random.uniform(5, 25, 27)
+        "Simulacao_Precipitacao": np.random.uniform(5, 25, 27) # Dados variados para colorir
     })
     
     fig_mapa = px.choropleth(
@@ -161,19 +173,15 @@ elif opcao == "Mapa e Download de Dados":
     )
     
     # Adiciona a visualização de pontos de cidades de médio porte
-    cidades_medio_porte = pd.DataFrame({
-        'cidade': ['Campinas', 'Ribeirão Preto', 'Uberlândia', 'Santos', 'Londrina'],
-        'lat': [-22.9099, -21.1762, -18.918, -23.9634, -23.3106],
-        'lon': [-47.0626, -47.8823, -48.2772, -46.3353, -51.1627]
-    })
+    cidades_medio_porte = generate_municipios_list()
     
     fig_mapa.add_trace(go.Scattergeo(
         lon = cidades_medio_porte['lon'],
         lat = cidades_medio_porte['lat'],
-        text = cidades_medio_porte['cidade'],
+        text = cidades_medio_porte['cidade'] + ", " + cidades_medio_porte['estado'],
         mode = 'markers',
         marker = dict(
-            size = 10,
+            size = 8,
             color = 'blue',
             symbol = 'circle',
             opacity = 0.8,
@@ -187,7 +195,7 @@ elif opcao == "Mapa e Download de Dados":
     st.header("📥 Download de Dados Completos")
     st.markdown("Clique no botão para baixar um arquivo CSV com dados diários simulados para todos os municípios.")
 
-    if st.button(f"📥 Baixar Dados de Todos os Municípios", type="primary"):
+    if st.button(f"📥 Baixar Dados de Todas as Estações", type="primary"):
         with st.spinner('Gerando arquivo...'):
             df_dados_completos = generate_all_brazil_data()
             csv_file = df_dados_completos.to_csv(index=False)
