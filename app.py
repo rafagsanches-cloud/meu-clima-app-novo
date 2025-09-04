@@ -382,21 +382,32 @@ else:  # Sobre o Sistema
     
     # Gráfico de exemplo
     st.subheader("📈 Exemplo de Validação Temporal")
-    dates = pd.date_range(start="2024-01-01", periods=30, freq="D")
-    precip_real = np.random.exponential(3, 30)
-    precip_prev = precip_real + np.random.normal(0, 0.5, 30)
-    
-    df_exemplo = pd.DataFrame({
-        "Data": dates,
-        "Real": precip_real,
-        "Previsto": precip_prev
-    })
-    
-    fig = px.line(df_exemplo, x="Data", y=["Real", "Previsto"], 
-                  title="Comparação: Precipitação Real vs Prevista")
-    fig.update_yaxis(title="Precipitação (mm)")
-    st.plotly_chart(fig, use_container_width=True)
+    try:
+        # Simula dados de um modelo real vs. dados reais para demonstração
+        dates = pd.date_range(start="2024-01-01", periods=30, freq="D")
+        
+        # Gera dados de precipitação real e previstos com um ruído
+        precip_real = np.random.exponential(3, 30)
+        precip_prev = precip_real * np.random.normal(1, 0.1, 30)
+        
+        df_exemplo = pd.DataFrame({
+            "Data": dates,
+            "Precipitação Real": precip_real,
+            "Precipitação Prevista": precip_prev
+        })
+        
+        fig = px.line(
+            df_exemplo, 
+            x="Data", 
+            y=["Precipitação Real", "Precipitação Prevista"], 
+            title="Comparação: Precipitação Real vs Prevista (Simulação de Validação)",
+            labels={"value": "Precipitação (mm)"}
+        )
+        fig.update_layout(yaxis_title="Precipitação (mm)")
+        st.plotly_chart(fig, use_container_width=True)
+    except Exception as e:
+        st.error(f"Erro ao gerar o gráfico de validação: {e}")
 
 # Footer
 st.markdown("---")
-st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.6 | **Última atualização:** 2024")
+st.markdown("**Desenvolvido por:** [Rafael Grecco Sanches] | **Versão:** 1.7 | **Última atualização:** 2024")
