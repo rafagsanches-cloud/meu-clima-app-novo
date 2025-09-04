@@ -413,7 +413,7 @@ else:  # Sobre o Sistema
     st.markdown("""
     Este sistema foi desenvolvido por **Rafael Grecco Sanches**, com base em sua pesquisa na área de Machine Learning aplicada à previsão climática. Você pode saber mais sobre o autor e seu trabalho acadêmico nos links abaixo:
 
-    - **Currículo Lattes:** [https://lattes.cnpq.br/XXXXXXXXXXXXXXX](https://lattes.cnpq.br/XXXXXXXXXXXXXXX)
+    - **Currículo Lattes:** [http://lattes.cnpq.br/2395726310692375](http://lattes.cnpq.br/2395726310692375)
     - **Google Acadêmico:** [https://scholar.google.com/citations?user=XXXXXXXXXXXXXXX](https://scholar.google.com/citations?user=XXXXXXXXXXXXXXX)
 
     *Nota: Substitua os URLs acima pelos seus links reais.*
