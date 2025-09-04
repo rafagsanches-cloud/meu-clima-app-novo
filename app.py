@@ -26,21 +26,30 @@ opcao = st.sidebar.selectbox(
 )
 
 # Functions for data simulation
-def make_prediction(data):
-    """Simulates a precipitation forecast based on input data."""
-    base_precip = np.random.uniform(0, 15)
-    if data.get("temp_max", 25) > 30:
-        base_precip *= 1.5
-    if data.get("umidade", 50) > 70:
-        base_precip *= 1.3
+def make_prediction_series(data, days=1):
+    """Simulates a precipitation forecast for a series of days."""
+    predictions = []
+    dates = [datetime.now() + timedelta(days=i) for i in range(days)]
     
-    municipio = data.get("municipio", "Itirapina")
-    if municipio == "São Paulo":
-        base_precip *= 1.2
-    elif municipio == "Rio de Janeiro":
-        base_precip *= 1.1
-    
-    return max(0, base_precip)
+    for _ in range(days):
+        base_precip = np.random.uniform(0, 15)
+        if data.get("temp_max", 25) > 30:
+            base_precip *= 1.5
+        if data.get("umidade", 50) > 70:
+            base_precip *= 1.3
+        
+        municipio = data.get("municipio", "Itirapina")
+        if municipio == "São Paulo":
+            base_precip *= 1.2
+        elif municipio == "Rio de Janeiro":
+            base_precip *= 1.1
+        
+        predictions.append(max(0, base_precip))
+        
+    return pd.DataFrame({
+        "data": dates,
+        "precipitacao_mm": predictions
+    })
 
 def generate_municipios_list():
     """Generates a simulated list of municipalities and their coordinates, including SP cities."""
@@ -130,6 +139,11 @@ if opcao == "Previsão Individual":
     municipios_list = generate_municipios_list()["cidade"].tolist()
     municipio_selecionado = st.selectbox("Selecione o Município", municipios_list)
     
+    dias_previsao = st.selectbox(
+        "Selecione o número de dias para a previsão:",
+        [1, 3, 5, 7, 10]
+    )
+    
     col1, col2 = st.columns(2)
     
     with col1:
@@ -137,13 +151,12 @@ if opcao == "Previsão Individual":
         temp_max = st.slider("Temperatura Máxima (°C)", -5.0, 45.0, 25.0, 0.1)
         temp_min = st.slider("Temperatura Mínima (°C)", -10.0, 35.0, 15.0, 0.1)
         umidade = st.slider("Umidade Relativa (%)", 0.0, 100.0, 60.0, 1.0)
-        pressao = st.slider("Pressão Atmosférica (hPa)", 900.0, 1050.0, 1013.0, 0.1)
         
     with col2:
         st.subheader("Dados Complementares")
+        pressao = st.slider("Pressão Atmosférica (hPa)", 900.0, 1050.0, 1013.0, 0.1)
         vel_vento = st.slider("Velocidade do Vento (m/s)", 0.0, 30.0, 5.0, 0.1)
         rad_solar = st.slider("Radiação Solar (MJ/m²)", 0.0, 35.0, 20.0, 0.1)
-        data_previsao = st.date_input("Data da Previsão", datetime.now())
         
     if st.button("🔮 Fazer Previsão", type="primary"):
         dados_input = {
@@ -156,28 +169,24 @@ if opcao == "Previsão Individual":
             "rad_solar": rad_solar
         }
         
-        previsao = make_prediction(dados_input)
+        previsoes_df = make_prediction_series(dados_input, days=dias_previsao)
         
-        st.success(f"🌧️ Previsão de Precipitação para {municipio_selecionado}: **{previsao:.2f} mm**")
+        st.subheader(f"Previsão de Precipitação para os Próximos {dias_previsao} Dias")
+        st.dataframe(previsoes_df)
         
-        if previsao < 1:
-            st.info("☀️ Dia seco - Precipitação muito baixa")
-        elif previsao < 5:
-            st.info("🌤️ Chuva leve - Precipitação baixa")
-        elif previsao < 15:
-            st.warning("🌦️ Chuva moderada - Precipitação moderada")
-        else:
-            st.error("⛈️ Chuva intensa - Precipitação alta")
-            
-        fig = go.Figure(data=[
-            go.Bar(x=["Previsão"], y=[previsao], marker_color="lightblue")
-        ])
+        fig = px.line(
+            previsoes_df, 
+            x="data", 
+            y="precipitacao_mm",
+            markers=True,
+            title="Tendência de Precipitação",
+        )
         fig.update_layout(
-            title="Volume de Chuva Previsto",
-            yaxis_title="Precipitação (mm)",
-            showlegend=False
+            xaxis_title="Data",
+            yaxis_title="Precipitação (mm)"
         )
         st.plotly_chart(fig, use_container_width=True)
+
 
 # --- Section: Data Analysis and Forecasts ---
 elif opcao == "Análise de Dados e Previsões":
@@ -201,7 +210,8 @@ elif opcao == "Análise de Dados e Previsões":
         filtered_df, 
         x="data", 
         y="precipitacao_mm", 
-        title=f"Previsão de Chuva para {municipio_selecionado_mensal} no Próximo Mês"
+        title=f"Previsão de Chuva para {municipio_selecionado_mensal} no Próximo Mês",
+        color_discrete_sequence=px.colors.qualitative.Plotly
     )
     fig_line.update_layout(
         xaxis_title="Data",
@@ -250,7 +260,13 @@ elif opcao == "Análise de Dados e Previsões":
         total_precip_by_city.sort_values(by="precipitacao_mm", ascending=False),
         x="municipio",
         y="precipitacao_mm",
-        title="Volume Total de Chuva Previsto por Município (Próximo Mês)"
+        title="Volume Total de Chuva Previsto por Município (Próximo Mês)",
+        color="precipitacao_mm",
+        color_continuous_scale=px.colors.sequential.Bluyl
+    )
+    fig_bar.update_layout(
+        xaxis_title="Município",
+        yaxis_title="Precipitação Total (mm)"
     )
     st.plotly_chart(fig_bar, use_container_width=True)
     
@@ -261,7 +277,8 @@ elif opcao == "Análise de Dados e Previsões":
         y="umidade_relativa",
         color="municipio",
         hover_name="municipio",
-        title="Relação entre Temperatura e Umidade"
+        title="Relação entre Temperatura e Umidade",
+        size="precipitacao_mm"
     )
     fig_scatter.update_layout(
         xaxis_title="Temperatura Média (°C)",
@@ -276,7 +293,8 @@ elif opcao == "Análise de Dados e Previsões":
         station_counts,
         values='Quantidade',
         names='Tipo de Estação',
-        title='Distribuição dos Tipos de Estações'
+        title='Distribuição dos Tipos de Estações',
+        color_discrete_sequence=px.colors.qualitative.Pastel
     )
     st.plotly_chart(fig_pie, use_container_width=True)
     
@@ -371,4 +389,4 @@ else:  # Sobre o Sistema
 
 # Footer
 st.markdown("---")
-st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.2 | **Última atualização:** 2024")
+st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.3 | **Última atualização:** 2024")
