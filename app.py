@@ -15,6 +15,40 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Estilos CSS para responsividade
+# Este bloco de estilo fará com que os gráficos e colunas se adaptem melhor
+# a telas menores, usando Flexbox.
+st.markdown("""
+<style>
+    .st-emotion-cache-1r6y9d7 {
+        flex-direction: column;
+    }
+    .st-emotion-cache-183n07d {
+        flex-direction: column;
+    }
+    .st-emotion-cache-1f190e8 {
+        flex-direction: column;
+    }
+    .st-emotion-cache-s2e93h {
+        flex-direction: column;
+    }
+    @media (max-width: 768px) {
+        .st-emotion-cache-1r6y9d7 {
+            flex-direction: column !important;
+        }
+        .st-emotion-cache-183n07d {
+            flex-direction: column !important;
+        }
+        .st-emotion-cache-1f190e8 {
+            flex-direction: column !important;
+        }
+        .st-emotion-cache-s2e93h {
+            flex-direction: column !important;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Título principal
 st.title("🌧️ Sistema de Previsão Climática - Brasil")
 st.markdown("### Previsão de Volume Diário de Chuva (mm)")
@@ -160,7 +194,7 @@ if opcao == "Previsão Individual":
             "pressao": pressao,
             "vel_vento": vel_vento,
             "rad_solar": rad_solar
-        }
+        )
         
         previsoes_df = make_prediction_series(dados_input, days=dias_previsao)
         
@@ -394,7 +428,7 @@ else:  # Sobre o Sistema
             "Data": dates,
             "Precipitação Real": precip_real,
             "Precipitação Prevista": precip_prev
-        })
+        )
         
         fig = px.line(
             df_exemplo, 
@@ -413,10 +447,11 @@ else:  # Sobre o Sistema
     st.markdown("""
     Este sistema foi desenvolvido por **Rafael Grecco Sanches**, com base em sua pesquisa na área de Machine Learning aplicada à previsão climática. Você pode saber mais sobre o autor e seu trabalho acadêmico nos links abaixo:
 
-    - **Currículo Lattes:** [http://lattes.cnpq.br/2395726310692375](http://lattes.cnpq.br/2395726310692375)
-    - **Google Acadêmico:** [https://scholar.google.com/citations?user=hCerscwAAAAJ&hl=pt-BR](https://scholar.google.com/citations?user=hCerscwAAAAJ&hl=pt-BR)
-    - **LinkedIn:** [www.linkedin.com/in/rafael-grecco-sanches-202807226](www.linkedin.com/in/rafael-grecco-sanches-202807226)
-  
+    - **Currículo Lattes:** [https://lattes.cnpq.br/XXXXXXXXXXXXXXX](https://lattes.cnpq.br/XXXXXXXXXXXXXXX)
+    - **Google Acadêmico:** [https://scholar.google.com/citations?user=XXXXXXXXXXXXXXX](https://scholar.google.com/citations?user=XXXXXXXXXXXXXXX)
+    - **LinkedIn:** [https://linkedin.com/in/XXXXXXXXXXXXXXX](https://linkedin.com/in/XXXXXXXXXXXXXXX)
+
+    *Nota: Substitua os URLs acima pelos seus links reais.*
     """)
 
 # Footer
