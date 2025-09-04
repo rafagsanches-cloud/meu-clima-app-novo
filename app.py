@@ -22,7 +22,7 @@ st.markdown("### Previsão de Volume Diário de Chuva (mm)")
 st.sidebar.title("Navegação")
 opcao = st.sidebar.selectbox(
     "Escolha uma opção:",
-    ["Previsão Individual", "Previsão Mensal (XGBoost)", "Mapa e Download de Dados", "Upload de CSV", "Sobre o Sistema"]
+    ["Previsão Individual", "Análise de Dados e Previsões", "Upload de CSV", "Sobre o Sistema"]
 )
 
 # Functions for data simulation
@@ -115,7 +115,9 @@ def generate_monthly_forecast_data(municipios):
             data_list.append({
                 "municipio": municipio,
                 "data": current_date.strftime("%Y-%m-%d"),
-                "precipitacao_mm": precipitacao
+                "precipitacao_mm": precipitacao,
+                "temperatura_media": np.random.uniform(20, 30),
+                "umidade_relativa": np.random.uniform(50, 90),
             })
         current_date += timedelta(days=1)
         
@@ -177,47 +179,40 @@ if opcao == "Previsão Individual":
         )
         st.plotly_chart(fig, use_container_width=True)
 
-# --- Section: Monthly Forecast (XGBoost Simulation) ---
-elif opcao == "Previsão Mensal (XGBoost)":
-    st.header("📈 Previsão de Chuva para o Próximo Mês")
-    st.markdown("""
-    Esta seção exibe a previsão de precipitação para o próximo mês em todas as estações, simulando os resultados de um modelo de machine learning (XGBoost) treinado com dados diários.
-    """)
+# --- Section: Data Analysis and Forecasts ---
+elif opcao == "Análise de Dados e Previsões":
+    st.header("📈 Análise de Dados e Previsões")
     
-    municipios_df = generate_municipios_list()
+    # Generate data
+    estacoes_df = generate_municipios_list()
+    forecast_df = generate_monthly_forecast_data(estacoes_df["cidade"].tolist())
+    
+    st.markdown("---")
+    st.subheader("Previsão de Chuva para o Próximo Mês (Simulação XGBoost)")
+    
     municipio_selecionado_mensal = st.selectbox(
         "Selecione um Município para a Previsão Mensal",
-        municipios_df["cidade"].tolist()
+        estacoes_df["cidade"].tolist()
     )
     
-    if st.button("Gerar Previsão Mensal", type="primary"):
-        with st.spinner("Gerando previsão..."):
-            forecast_df = generate_monthly_forecast_data(municipios_df["cidade"].tolist())
-            filtered_df = forecast_df[forecast_df["municipio"] == municipio_selecionado_mensal]
-            
-            fig = px.line(
-                filtered_df, 
-                x="data", 
-                y="precipitacao_mm", 
-                title=f"Previsão de Chuva para {municipio_selecionado_mensal} no Próximo Mês"
-            )
-            fig.update_layout(
-                xaxis_title="Data",
-                yaxis_title="Precipitação (mm)"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-            
-            st.subheader("Dados Brutos da Previsão")
-            st.dataframe(filtered_df)
-
-# --- Section: Map and Data Download ---
-elif opcao == "Mapa e Download de Dados":
-    st.header("🗺️ Mapa Interativo do Brasil")
-    st.markdown("Passe o mouse sobre os pontos para ver o nome da estação. A cor indica o tipo de estação.")
-
-    estacoes_df = generate_municipios_list()
+    filtered_df = forecast_df[forecast_df["municipio"] == municipio_selecionado_mensal]
     
-    # Add scatter plot for cities on a map of Brazil
+    fig_line = px.line(
+        filtered_df, 
+        x="data", 
+        y="precipitacao_mm", 
+        title=f"Previsão de Chuva para {municipio_selecionado_mensal} no Próximo Mês"
+    )
+    fig_line.update_layout(
+        xaxis_title="Data",
+        yaxis_title="Precipitação (mm)"
+    )
+    st.plotly_chart(fig_line, use_container_width=True)
+
+    st.markdown("---")
+    st.subheader("🗺️ Mapa Interativo do Brasil")
+    st.markdown("Passe o mouse sobre os pontos para ver o nome da estação. A cor indica o tipo de estação.")
+    
     fig_mapa = px.scatter_geo(
         estacoes_df,
         lat='lat',
@@ -238,7 +233,6 @@ elif opcao == "Mapa e Download de Dados":
         geo_bgcolor='white'
     )
     
-    # Focus the map on Brazil
     fig_mapa.update_geos(
         lonaxis_range=[-75, -30],
         lataxis_range=[-35, 5],
@@ -246,15 +240,48 @@ elif opcao == "Mapa e Download de Dados":
     )
 
     st.plotly_chart(fig_mapa, use_container_width=True)
-    
-    # Scrollable list for São Paulo municipalities
-    st.header("Municípios de São Paulo")
-    sp_municipios = estacoes_df[estacoes_df['estado'] == 'SP']['cidade'].tolist()
-    st.selectbox("Selecione um município para mais detalhes (simulação)", sp_municipios)
-
 
     st.markdown("---")
-    st.header("📥 Download de Dados Completos")
+    st.subheader("Análises Complementares")
+
+    # Group data by city and get total precipitation
+    total_precip_by_city = forecast_df.groupby("municipio")["precipitacao_mm"].sum().reset_index()
+    fig_bar = px.bar(
+        total_precip_by_city.sort_values(by="precipitacao_mm", ascending=False),
+        x="municipio",
+        y="precipitacao_mm",
+        title="Volume Total de Chuva Previsto por Município (Próximo Mês)"
+    )
+    st.plotly_chart(fig_bar, use_container_width=True)
+    
+    # Scatter plot of Temperature vs Humidity
+    fig_scatter = px.scatter(
+        forecast_df,
+        x="temperatura_media",
+        y="umidade_relativa",
+        color="municipio",
+        hover_name="municipio",
+        title="Relação entre Temperatura e Umidade"
+    )
+    fig_scatter.update_layout(
+        xaxis_title="Temperatura Média (°C)",
+        yaxis_title="Umidade Relativa (%)"
+    )
+    st.plotly_chart(fig_scatter, use_container_width=True)
+    
+    # Pie chart of station types
+    station_counts = estacoes_df['tipo_estacao'].value_counts().reset_index()
+    station_counts.columns = ['Tipo de Estação', 'Quantidade']
+    fig_pie = px.pie(
+        station_counts,
+        values='Quantidade',
+        names='Tipo de Estação',
+        title='Distribuição dos Tipos de Estações'
+    )
+    st.plotly_chart(fig_pie, use_container_width=True)
+    
+    st.markdown("---")
+    st.subheader("📥 Download de Dados Completos")
     st.markdown("Clique no botão para baixar um arquivo CSV com dados diários simulados para todas as estações.")
 
     if st.button(f"📥 Baixar Dados de Todas as Estações", type="primary"):
@@ -344,4 +371,4 @@ else:  # Sobre o Sistema
 
 # Footer
 st.markdown("---")
-st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.1 | **Última atualização:** 2024")
+st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.2 | **Última atualização:** 2024")
