@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import io
 import base64
 
-# Título do aplicativo e configuração da página
+# Page title and layout
 st.set_page_config(
     page_title="Sistema de Previsão Climática - Brasil",
     page_icon="🌧️",
@@ -18,16 +18,16 @@ st.set_page_config(
 st.title("🌧️ Sistema de Previsão Climática - Brasil")
 st.markdown("### Previsão de Volume Diário de Chuva (mm)")
 
-# Sidebar para navegação
+# Sidebar for navigation
 st.sidebar.title("Navegação")
 opcao = st.sidebar.selectbox(
     "Escolha uma opção:",
-    ["Previsão Individual", "Mapa e Download de Dados", "Upload de CSV", "Sobre o Sistema"]
+    ["Previsão Individual", "Previsão Mensal (XGBoost)", "Mapa e Download de Dados", "Upload de CSV", "Sobre o Sistema"]
 )
 
-# Funções de simulação de dados
+# Functions for data simulation
 def make_prediction(data):
-    """Simula uma previsão de precipitação com base nos dados de entrada."""
+    """Simulates a precipitation forecast based on input data."""
     base_precip = np.random.uniform(0, 15)
     if data.get("temp_max", 25) > 30:
         base_precip *= 1.5
@@ -43,7 +43,7 @@ def make_prediction(data):
     return max(0, base_precip)
 
 def generate_municipios_list():
-    """Gera uma lista simulada de municípios e suas coordenadas, incluindo cidades de SP."""
+    """Generates a simulated list of municipalities and their coordinates, including SP cities."""
     return pd.DataFrame({
         'cidade': [
             "Campinas", "Ribeirão Preto", "Uberlândia", "Santos", "Londrina",
@@ -77,7 +77,7 @@ def generate_municipios_list():
     })
 
 def generate_all_brazil_data():
-    """Gera um DataFrame simulado com dados de precipitação para todas as estações simuladas."""
+    """Generates a simulated DataFrame with precipitation data for all simulated stations."""
     municipios_df = generate_municipios_list()
     municipios_simulados = municipios_df['cidade'].tolist()
     
@@ -96,8 +96,32 @@ def generate_all_brazil_data():
             })
             
     return pd.DataFrame(data_list)
+    
+def generate_monthly_forecast_data(municipios):
+    """Simulates a monthly forecast for the next 30 days, mimicking XGBoost output."""
+    data_list = []
+    start_date = datetime.now()
+    end_date = start_date + timedelta(days=30)
+    
+    current_date = start_date
+    while current_date < end_date:
+        for municipio in municipios:
+            # Simulate a time series pattern for precipitation
+            day_of_month = current_date.day
+            base_precip = np.sin(np.pi * 2 * day_of_month / 30) * 10 + 15
+            # Add random noise
+            precipitacao = max(0, base_precip + np.random.uniform(-5, 5))
+            
+            data_list.append({
+                "municipio": municipio,
+                "data": current_date.strftime("%Y-%m-%d"),
+                "precipitacao_mm": precipitacao
+            })
+        current_date += timedelta(days=1)
+        
+    return pd.DataFrame(data_list)
 
-# --- Seção: Previsão Individual ---
+# --- Section: Individual Forecast ---
 if opcao == "Previsão Individual":
     st.header("📊 Previsão Individual")
     
@@ -153,14 +177,47 @@ if opcao == "Previsão Individual":
         )
         st.plotly_chart(fig, use_container_width=True)
 
-# --- Seção: Mapa e Download de Dados ---
+# --- Section: Monthly Forecast (XGBoost Simulation) ---
+elif opcao == "Previsão Mensal (XGBoost)":
+    st.header("📈 Previsão de Chuva para o Próximo Mês")
+    st.markdown("""
+    Esta seção exibe a previsão de precipitação para o próximo mês em todas as estações, simulando os resultados de um modelo de machine learning (XGBoost) treinado com dados diários.
+    """)
+    
+    municipios_df = generate_municipios_list()
+    municipio_selecionado_mensal = st.selectbox(
+        "Selecione um Município para a Previsão Mensal",
+        municipios_df["cidade"].tolist()
+    )
+    
+    if st.button("Gerar Previsão Mensal", type="primary"):
+        with st.spinner("Gerando previsão..."):
+            forecast_df = generate_monthly_forecast_data(municipios_df["cidade"].tolist())
+            filtered_df = forecast_df[forecast_df["municipio"] == municipio_selecionado_mensal]
+            
+            fig = px.line(
+                filtered_df, 
+                x="data", 
+                y="precipitacao_mm", 
+                title=f"Previsão de Chuva para {municipio_selecionado_mensal} no Próximo Mês"
+            )
+            fig.update_layout(
+                xaxis_title="Data",
+                yaxis_title="Precipitação (mm)"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            st.subheader("Dados Brutos da Previsão")
+            st.dataframe(filtered_df)
+
+# --- Section: Map and Data Download ---
 elif opcao == "Mapa e Download de Dados":
     st.header("🗺️ Mapa Interativo do Brasil")
     st.markdown("Passe o mouse sobre os pontos para ver o nome da estação. A cor indica o tipo de estação.")
 
     estacoes_df = generate_municipios_list()
     
-    # Adiciona a visualização de pontos de cidades de médio porte em um mapa do Brasil
+    # Add scatter plot for cities on a map of Brazil
     fig_mapa = px.scatter_geo(
         estacoes_df,
         lat='lat',
@@ -181,7 +238,7 @@ elif opcao == "Mapa e Download de Dados":
         geo_bgcolor='white'
     )
     
-    # Foca o mapa no Brasil
+    # Focus the map on Brazil
     fig_mapa.update_geos(
         lonaxis_range=[-75, -30],
         lataxis_range=[-35, 5],
@@ -190,7 +247,7 @@ elif opcao == "Mapa e Download de Dados":
 
     st.plotly_chart(fig_mapa, use_container_width=True)
     
-    # Barra de rolagem para os municípios de São Paulo
+    # Scrollable list for São Paulo municipalities
     st.header("Municípios de São Paulo")
     sp_municipios = estacoes_df[estacoes_df['estado'] == 'SP']['cidade'].tolist()
     st.selectbox("Selecione um município para mais detalhes (simulação)", sp_municipios)
@@ -209,7 +266,7 @@ elif opcao == "Mapa e Download de Dados":
             st.markdown(href, unsafe_allow_html=True)
         st.success("Arquivo gerado com sucesso!")
 
-# --- Seção: Upload de CSV ---
+# --- Section: Upload CSV ---
 elif opcao == "Upload de CSV":
     st.header("📁 Upload de Arquivo CSV")
     st.markdown("""
@@ -247,7 +304,7 @@ elif opcao == "Upload de CSV":
         except Exception as e:
             st.error(f"Erro ao processar arquivo: {str(e)}")
 
-# --- Seção: Sobre o Sistema ---
+# --- Section: About the System ---
 else:  # Sobre o Sistema
     st.header("ℹ️ Sobre o Sistema")
     st.markdown("""
@@ -272,7 +329,7 @@ else:  # Sobre o Sistema
     - Pesquisa climática
     """)
     
-    # --- Seção de Créditos ---
+    # --- Credits Section ---
     st.markdown("---")
     st.header("👨‍💻 Sobre o Autor")
     st.markdown("""
@@ -287,4 +344,4 @@ else:  # Sobre o Sistema
 
 # Footer
 st.markdown("---")
-st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.0 | **Última atualização:** 2024")
+st.markdown("**Desenvolvido por:** Manus AI | **Versão:** 1.1 | **Última atualização:** 2024")
