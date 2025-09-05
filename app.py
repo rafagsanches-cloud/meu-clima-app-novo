@@ -244,6 +244,13 @@ def main():
             fig_previsao.update_traces(mode='lines+markers', line=dict(color='#0077b6'))
             st.plotly_chart(fig_previsao, use_container_width=True)
 
+            # Novo: Tabela de previsões detalhadas
+            st.markdown("### 📋 Detalhes da Previsão em Tabela")
+            df_previsoes_table = previsoes.to_frame()
+            df_previsoes_table.index = df_previsoes_table.index.strftime('%Y-%m-%d')
+            df_previsoes_table.columns = ['Precipitação Prevista (mm)']
+            st.dataframe(df_previsoes_table, use_container_width=True)
+
             st.markdown("---")
             st.subheader("📈 Análise de Desempenho do Modelo")
             st.markdown("*(Métricas simuladas para demonstração do modelo XGBoost)*")
