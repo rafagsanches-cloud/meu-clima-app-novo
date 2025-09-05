@@ -6,7 +6,6 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import io
 import base64
-from streamlit_plotly_events import plotly_events # Adicionado para interatividade
 
 # Configuração da página e ícone
 st.set_page_config(
@@ -111,6 +110,27 @@ def make_prediction(data):
         base_precip *= 1.3
     return max(0, base_precip)
 
+def generate_monthly_forecast_data(municipios):
+    """Simula uma previsão mensal para todas as cidades."""
+    data_list = []
+    start_date = datetime.now()
+    end_date = start_date + timedelta(days=30)
+    current_date = start_date
+    while current_date < end_date:
+        for municipio in municipios:
+            day_of_month = current_date.day
+            base_precip = np.sin(np.pi * 2 * day_of_month / 30) * 10 + 15
+            precipitacao = max(0, base_precip + np.random.uniform(-5, 5))
+            data_list.append({
+                "municipio": municipio,
+                "data": current_date.strftime("%Y-%m-%d"),
+                "precipitacao_mm": precipitacao,
+                "temperatura_media": np.random.uniform(20, 30),
+                "umidade_relativa": np.random.uniform(50, 90),
+            })
+        current_date += timedelta(days=1)
+    return pd.DataFrame(data_list)
+
 # Função para simular as métricas de desempenho
 def simulate_metrics(municipio):
     """Simula métricas de desempenho para um município específico."""
@@ -152,15 +172,9 @@ def main():
 
         municipios_list = generate_municipios_list()["cidade"].tolist()
 
-        # O `key` é usado para conectar o selectbox à sessão
-        if 'selected_city' not in st.session_state:
-            st.session_state['selected_city'] = "Itirapina"
-
         municipio_selecionado = st.selectbox(
             "Selecione o Município:",
-            municipios_list,
-            index=municipios_list.index(st.session_state['selected_city']),
-            key="municipio_selectbox"
+            municipios_list
         )
         
         dias_previsao = st.selectbox(
@@ -235,8 +249,8 @@ def main():
 
     # --- Seção: Análise de Dados e Previsões ---
     elif opcao == "Análise de Dados e Previsões":
-        st.header("🗺️ Navegue e Analise")
-        st.markdown("Clique em um ponto no mapa para selecionar o município e ver a previsão mensal para ele.")
+        st.header("🗺️ Análise de Dados e Previsões Mensais")
+        st.markdown("Explore a localização das estações no mapa e selecione um município para ver a previsão detalhada para o próximo mês.")
         
         estacoes_df = generate_municipios_list()
         
@@ -254,24 +268,24 @@ def main():
             showcountries=True, countrycolor="black", showsubunits=True, subunitcolor="grey"
         )
         
-        # Interatividade do mapa
-        selected_points = plotly_events(fig_mapa)
+        st.plotly_chart(fig_mapa, use_container_width=True)
         
-        if selected_points:
-            point_index = selected_points[0]['pointIndex']
-            st.session_state['selected_city'] = estacoes_df.iloc[point_index]['cidade']
-            st.experimental_rerun() # Reinicia a aplicação para atualizar o selectbox
-
         st.markdown("---")
-        st.subheader(f"📊 Previsão Mensal para {st.session_state['selected_city']}")
+        
+        municipios_list = generate_municipios_list()["cidade"].tolist()
+        municipio_mensal_selecionado = st.selectbox(
+            "Selecione um Município para a Previsão Mensal:",
+            municipios_list
+        )
+
         forecast_df = generate_monthly_forecast_data(estacoes_df["cidade"].tolist())
-        filtered_df = forecast_df[forecast_df["municipio"] == st.session_state['selected_city']]
+        filtered_df = forecast_df[forecast_df["municipio"] == municipio_mensal_selecionado]
 
         fig_line = px.line(
             filtered_df, 
             x="data", 
             y="precipitacao_mm", 
-            title=f"Previsão de Chuva para {st.session_state['selected_city']} no Próximo Mês",
+            title=f"Previsão de Chuva para {municipio_mensal_selecionado} no Próximo Mês",
             color_discrete_sequence=px.colors.qualitative.Plotly
         )
         fig_line.update_layout(xaxis_title="Data", yaxis_title="Precipitação (mm)")
@@ -361,7 +375,7 @@ def main():
             
     # Rodapé
     st.markdown("---")
-    st.markdown("**Desenvolvido por:** Rafael Grecco Sanches | **Versão:** 1.8 | **Última atualização:** 2024")
+    st.markdown("**Desenvolvido por:** Rafael Grecco Sanches | **Versão:** 1.9 | **Última atualização:** 2024")
 
 if __name__ == "__main__":
     main()
