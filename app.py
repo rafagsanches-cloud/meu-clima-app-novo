@@ -70,6 +70,42 @@ def make_prediction_series(df_predict, num_days):
     
     return pd.Series(simulated_forecast, index=forecast_dates, name=f"previsao_precipitacao")
 
+def generate_simulated_historical_data(num_days=365):
+    """Gera um DataFrame com dados históricos simulados para fins de demonstração."""
+    start_date = datetime.now() - timedelta(days=num_days)
+    dates = pd.date_range(start_date, periods=num_days, freq='D')
+
+    # Simular temperaturas com padrão sazonal
+    day_of_year = dates.dayofyear
+    temp_variation = np.sin(2 * np.pi * day_of_year / 365)
+    temp_max_base = 25 + temp_variation * 10 + np.random.normal(0, 2, num_days)
+    temp_min_base = 15 + temp_variation * 8 + np.random.normal(0, 1.5, num_days)
+
+    # Simular umidade inversamente correlacionada com a temperatura
+    umidade_base = 60 - temp_variation * 15 + np.random.normal(0, 5, num_days)
+    umidade_base[umidade_base > 100] = 100
+    umidade_base[umidade_base < 0] = 0
+
+    # Simular precipitação que depende da umidade e da estação
+    precipitacao_base = np.maximum(0, (umidade_base - 60) * 0.5 + np.random.normal(0, 1, num_days))
+
+    # Criar o DataFrame
+    df = pd.DataFrame({
+        'data': dates,
+        'temp_max': temp_max_base,
+        'temp_min': temp_min_base,
+        'umidade': umidade_base,
+        'pressao': 1013 + np.random.normal(0, 2, num_days),
+        'vel_vento': 5 + np.random.normal(0, 1, num_days),
+        'rad_solar': 20 + temp_variation * 5 + np.random.normal(0, 2, num_days),
+        'precipitacao': precipitacao_base
+    })
+    
+    df['vel_vento'] = df['vel_vento'].clip(lower=0)
+    df['rad_solar'] = df['rad_solar'].clip(lower=0)
+
+    return df
+
 def simulate_metrics(municipio):
     """Simula métricas de desempenho para um município específico."""
     base_rmse = np.random.uniform(2.0, 3.5)
@@ -183,7 +219,7 @@ def main():
             index=municipios_list.index("Itirapina")
         )
         
-        # Novo: Mapa interativo para visualização das cidades
+        # Mapa interativo para visualização das cidades
         st.subheader("📍 Localização dos Municípios")
         fig_map = px.scatter_mapbox(
             estacoes_df,
@@ -244,7 +280,7 @@ def main():
             fig_previsao.update_traces(mode='lines+markers', line=dict(color='#0077b6'))
             st.plotly_chart(fig_previsao, use_container_width=True)
 
-            # Novo: Tabela de previsões detalhadas
+            # Tabela de previsões detalhadas
             st.markdown("### 📋 Detalhes da Previsão em Tabela")
             df_previsoes_table = previsoes.to_frame()
             df_previsoes_table.index = df_previsoes_table.index.strftime('%Y-%m-%d')
@@ -273,6 +309,69 @@ def main():
             )
             fig_metrics.update_layout(xaxis_title="", yaxis_title="Valor da Métrica")
             st.plotly_chart(fig_metrics, use_container_width=True)
+
+            # Novos gráficos adicionados aqui
+            st.markdown("---")
+            st.subheader("📚 Análise Histórica e Estatística (Dados Simulados)")
+            st.markdown("*(Gráficos com base em dados históricos simulados para 1 ano.)*")
+            
+            simulated_df = generate_simulated_historical_data()
+            
+            # Gráfico de Barras - Precipitação Média Mensal
+            monthly_avg = simulated_df.groupby(simulated_df['data'].dt.month_name())['precipitacao'].mean().reindex([
+                'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
+            ])
+            
+            fig_bar_month = px.bar(
+                monthly_avg,
+                title="Precipitação Média Mensal",
+                labels={'value': 'Precipitação (mm)', 'data': 'Mês'}
+            )
+            fig_bar_month.update_xaxes(title_text="Mês")
+            fig_bar_month.update_yaxes(title_text="Precipitação (mm)")
+            st.plotly_chart(fig_bar_month, use_container_width=True)
+
+            # Gráfico de Pizza - Composição da Chuva
+            def categorize_rain(precip):
+                if precip > 20: return 'Chuva Forte'
+                if precip > 5: return 'Chuva Moderada'
+                if precip > 0: return 'Chuva Leve'
+                return 'Sem Chuva'
+            
+            simulated_df['categoria_chuva'] = simulated_df['precipitacao'].apply(categorize_rain)
+            
+            fig_pie = px.pie(
+                simulated_df,
+                names='categoria_chuva',
+                title="Composição dos Dias de Chuva",
+                color_discrete_sequence=px.colors.sequential.Bluyl,
+                hole=0.4
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
+
+            # Gráfico de Distribuição (Histograma)
+            fig_hist = px.histogram(
+                simulated_df,
+                x='precipitacao',
+                nbins=20,
+                title="Distribuição da Precipitação",
+                labels={'precipitacao': 'Precipitação (mm)'}
+            )
+            fig_hist.update_traces(marker_color='#0077b6')
+            st.plotly_chart(fig_hist, use_container_width=True)
+
+            # Gráfico de Dispersão (Estatístico)
+            fig_scatter = px.scatter(
+                simulated_df,
+                x='umidade',
+                y='temp_max',
+                color='precipitacao',
+                size='precipitacao',
+                title="Relação entre Umidade, Temperatura e Precipitação",
+                labels={'umidade': 'Umidade (%)', 'temp_max': 'Temp. Máxima (°C)', 'precipitacao': 'Precipitação (mm)'}
+            )
+            st.plotly_chart(fig_scatter, use_container_width=True)
+
 
     elif opcao == "Upload de CSV":
         st.header("📁 Faça o Upload de seus Dados")
