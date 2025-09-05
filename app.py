@@ -7,7 +7,6 @@ from datetime import datetime
 import io
 import base64
 import os
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # --- Funções de Pré-processamento e Modelagem (Simuladas) ---
 def create_features(df, config):
