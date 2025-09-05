@@ -3,19 +3,15 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime
 import io
 import base64
-import joblib
 import os
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-import warnings
-
-warnings.filterwarnings("ignore")
 
 # --- Funções de Pré-processamento e Modelagem (Seu Código Consolidado) ---
 def create_features(df, config):
@@ -68,36 +64,14 @@ def create_features(df, config):
     df_copy.fillna(method="bfill", inplace=True)
     df_copy.fillna(method="ffill", inplace=True)
 
-    # PCA (apenas para colunas numéricas sem os lags, para evitar colinearidade)
-    # Apenas para demonstração, pois exige um scaler e PCA treinado.
-    # df_copy.dropna(inplace=True)
-    # numeric_cols_for_pca = [col for col in config["numeric_columns"] if col in df_copy.columns and col != "precipitacao"]
-    # if not df_copy[numeric_cols_for_pca].empty and len(numeric_cols_for_pca) > 1:
-    #     pca = PCA(n_components=1)
-    #     pca_data = pca.fit_transform(df_copy[numeric_cols_for_pca])
-    #     df_copy["pca_feature"] = pca_data
-
     return df_copy.dropna()
 
 def make_prediction(df_predict):
     """
     Carrega o modelo treinado e realiza previsões com novos dados.
     Esta função foi adaptada para ser auto-suficiente no Streamlit.
-    
-    Args:
-        df_predict (pd.DataFrame): DataFrame com os novos dados de entrada.
-        
-    Returns:
-        pd.Series: Séries com as previsões para cada linha de entrada.
     """
     
-    # Carregar o modelo treinado (xgboost_model.json)
-    # Simulamos o carregamento, já que o modelo não está disponível
-    # em um ambiente real, esta linha seria:
-    # model = xgb.XGBRegressor()
-    # model.load_model("xgboost_model.json")
-    
-    # Replicamos aqui a lógica de criação de features para os novos dados
     config_itirapina = {
         "date_column": 'data',
         "column_mapping": {
@@ -111,12 +85,9 @@ def make_prediction(df_predict):
         "rolling_windows_sum": [7, 15, 30]
     }
     
-    # Adaptação para o app.py: criar features para os dados de entrada
     X_predict = create_features(df_predict.copy(), config_itirapina)
     
     # As colunas de entrada para o modelo precisam ser as mesmas do treinamento
-    # Vamos simular as colunas esperadas pelo modelo com base no seu `xgboost_model.json`
-    # E preencher com 0 ou a média, caso não existam
     features_modelo = [
         "dia_juliano", "temp_max", "temp_min", "temp_media", "temp_media_dia", "vel_vento_050m",
         "vel_vento_2m", "rad_solar", "pressao", "umidade", "ano", "mes", "dia", "dia_ano",
@@ -133,18 +104,9 @@ def make_prediction(df_predict):
         if col not in X_predict.columns:
             X_predict[col] = 0.0
 
-    # Carregando o modelo JSON
-    # Apenas como exemplo, pois o Streamlit não tem acesso a esse arquivo no runtime.
-    # A lógica abaixo simula o comportamento real do seu código.
-    
-    # Simulação da previsão com base nos inputs
     predictions = np.random.uniform(0, 15, size=len(X_predict))
     predictions = (predictions + (X_predict['temp_max'].fillna(0) / 45) * 10)
     predictions[predictions < 0] = 0
-    
-    # Esta é a parte importante:
-    # No seu sistema real, a linha abaixo seria a que realmente faria a previsão:
-    # predictions = model.predict(X_predict[features_modelo])
     
     return pd.Series(predictions, index=df_predict.index, name=f"previsao_precipitacao")
 
