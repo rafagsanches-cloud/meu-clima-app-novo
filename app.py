@@ -7,15 +7,11 @@ from datetime import datetime
 import io
 import base64
 import os
-import xgboost as xgb
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from sklearn.model_selection import TimeSeriesSplit
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 
-# --- Funções de Pré-processamento e Modelagem (Seu Código Consolidado) ---
+# --- Funções de Pré-processamento e Modelagem (Simuladas) ---
 def create_features(df, config):
-    """Cria features a partir de um DataFrame de dados climáticos."""
+    """Cria features simuladas a partir de um DataFrame de dados climáticos."""
     df_copy = df.copy()
 
     # Renomear colunas para padronização interna
@@ -33,34 +29,13 @@ def create_features(df, config):
             df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce')
             df_copy[col].fillna(df_copy[col].median(), inplace=True)
 
-    # 1. Features Temporais Básicas
+    # Apenas para simulação, não precisamos de todas as features complexas
     df_copy["ano"] = df_copy.index.year
     df_copy["mes"] = df_copy.index.month
     df_copy["dia"] = df_copy.index.day
-    df_copy["dia_ano"] = df_copy.index.dayofyear
-    df_copy["dia_semana"] = df_copy.index.dayofweek
+    df_copy["temp_media"] = (df_copy["temp_max"] + df_copy["temp_min"]) / 2
 
-    # 2. Features Cíclicas (Seno e Cosseno)
-    for col in ["mes", "dia_ano"]:
-        df_copy[f"{col}_sin"] = np.sin(2 * np.pi * df_copy[col]/df_copy[col].max())
-        df_copy[f"{col}_cos"] = np.cos(2 * np.pi * df_copy[col]/df_copy[col].max())
-
-    # 3. Features de Lag
-    for lag in config["lags"]:
-        for col in config["lag_cols"]:
-            df_copy[f"{col}_lag_{lag}"] = df_copy[col].shift(lag)
-
-    # 4. Features de Rolling Window (estatísticas móveis)
-    for window in config["rolling_windows_quantile"]:
-        for col in config["numeric_columns"]:
-            if col != "precipitacao": # Não usar a variável alvo em estatísticas futuras
-                df_copy[f"{col}_media_{window}d"] = df_copy[col].rolling(window=f"{window}D", min_periods=1).mean()
-                df_copy[f"{col}_std_{window}d"] = df_copy[col].rolling(window=f"{window}D", min_periods=1).std()
-
-    for window in config["rolling_windows_sum"]:
-         df_copy[f"precipitacao_soma_{window}d"] = df_copy["precipitacao"].rolling(window=f"{window}D", min_periods=1).sum()
-    
-    # Preencher NaNs após a criação de features com valores históricos
+    # Preencher NaNs após a criação de features
     df_copy.fillna(method="bfill", inplace=True)
     df_copy.fillna(method="ffill", inplace=True)
 
@@ -68,8 +43,8 @@ def create_features(df, config):
 
 def make_prediction(df_predict):
     """
-    Carrega o modelo treinado e realiza previsões com novos dados.
-    Esta função foi adaptada para ser auto-suficiente no Streamlit.
+    Simula previsões de precipitação com base nos dados de entrada.
+    Esta função não depende de nenhum modelo externo ou biblioteca.
     """
     
     config_itirapina = {
@@ -77,35 +52,14 @@ def make_prediction(df_predict):
         "column_mapping": {
             'data': 'data', 'temp_max': 'temp_max', 'temp_min': 'temp_min', 'umidade': 'umidade', 'pressao': 'pressao', 'vel_vento': 'vel_vento', 'rad_solar': 'rad_solar'
         },
-        "numeric_columns": ['temp_max', 'temp_min', 'umidade', 'pressao', 'vel_vento', 'rad_solar'],
-        "categorical_columns": [],
-        "lags": [1, 2, 3, 7],
-        "lag_cols": ['temp_max', 'temp_min', 'umidade', 'pressao', 'vel_vento'],
-        "rolling_windows_quantile": [15, 30],
-        "rolling_windows_sum": [7, 15, 30]
+        "numeric_columns": ['temp_max', 'temp_min', 'umidade', 'pressao', 'vel_vento', 'rad_solar']
     }
     
     X_predict = create_features(df_predict.copy(), config_itirapina)
     
-    # As colunas de entrada para o modelo precisam ser as mesmas do treinamento
-    features_modelo = [
-        "dia_juliano", "temp_max", "temp_min", "temp_media", "temp_media_dia", "vel_vento_050m",
-        "vel_vento_2m", "rad_solar", "pressao", "umidade", "ano", "mes", "dia", "dia_ano",
-        "dia_semana", "mes_sin", "mes_cos", "dia_ano_sin", "dia_ano_cos", "temp_max_lag_1",
-        "temp_min_lag_1", "umidade_lag_1", "pressao_lag_1", "vel_vento_lag_1", "temp_max_lag_2",
-        "temp_min_lag_2", "umidade_lag_2", "pressao_lag_2", "vel_vento_lag_2", "temp_max_lag_3",
-        "temp_min_lag_3", "umidade_lag_3", "pressao_lag_3", "vel_vento_lag_3", "temp_max_lag_7",
-        "temp_min_lag_7", "umidade_lag_7", "pressao_lag_7", "vel_vento_lag_7",
-        "temp_max_media_15d", "temp_min_media_15d", "umidade_media_15d", "pressao_media_15d", "vel_vento_media_15d",
-        "temp_max_media_30d", "temp_min_media_30d", "umidade_media_30d", "pressao_media_30d", "vel_vento_media_30d"
-    ]
-
-    for col in features_modelo:
-        if col not in X_predict.columns:
-            X_predict[col] = 0.0
-
-    predictions = np.random.uniform(0, 15, size=len(X_predict))
-    predictions = (predictions + (X_predict['temp_max'].fillna(0) / 45) * 10)
+    # Lógica de previsão simulada (agora 100% independente)
+    # A precipitação é uma função simples da temperatura máxima, umidade e um termo aleatório.
+    predictions = (0.2 * X_predict['temp_max']) + (0.1 * X_predict['umidade']) + np.random.uniform(0, 5, size=len(X_predict))
     predictions[predictions < 0] = 0
     
     return pd.Series(predictions, index=df_predict.index, name=f"previsao_precipitacao")
@@ -358,11 +312,11 @@ def main():
         st.subheader("🔗 Meus Contatos")
         col_links1, col_links2, col_links3 = st.columns(3)
         with col_links1:
-            st.markdown("[Currículo Lattes](http://lattes.cnpq.br/2395726310692375)")
+            st.markdown("[Currículo Lattes](https://lattes.cnpq.br/XXXXXXXXXXXXXXX)")
         with col_links2:
-            st.markdown("[Google Acadêmico](https://scholar.google.com/citations?user=hCerscwAAAAJ&hl=pt-BR)")
+            st.markdown("[Google Acadêmico](https://scholar.google.com/citations?user=XXXXXXXXXXXXXXX)")
         with col_links3:
-            st.markdown("[LinkedIn](www.linkedin.com/in/rafael-grecco-sanches-202807226)")
+            st.markdown("[LinkedIn](https://linkedin.com/in/XXXXXXXXXXXXXXX)")
             
     st.markdown("---")
     st.markdown("**Desenvolvido por:** Rafael Grecco Sanches | **Versão:** 2.2 | **Última atualização:** 2024")
