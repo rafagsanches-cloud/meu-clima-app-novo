@@ -83,8 +83,9 @@ def generate_simulated_historical_data(num_days=365):
 
     # Simular umidade inversamente correlacionada com a temperatura
     umidade_base = 60 - temp_variation * 15 + np.random.normal(0, 5, num_days)
-    umidade_base[umidade_base > 100] = 100
-    umidade_base[umidade_base < 0] = 0
+
+    # CORREÇÃO APLICADA AQUI: usar np.clip para garantir que os valores fiquem entre 0 e 100
+    umidade_base = np.clip(umidade_base, 0, 100)
 
     # Simular precipitação que depende da umidade e da estação
     precipitacao_base = np.maximum(0, (umidade_base - 60) * 0.5 + np.random.normal(0, 1, num_days))
