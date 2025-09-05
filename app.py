@@ -7,6 +7,13 @@ from datetime import datetime, timedelta
 import io
 import base64
 
+# Tenta importar o componente de interatividade do Plotly
+try:
+    from streamlit_plotly_events import plotly_events
+    PLOTLY_EVENTS_AVAILABLE = True
+except ImportError:
+    PLOTLY_EVENTS_AVAILABLE = False
+    
 # Configuração da página e ícone
 st.set_page_config(
     page_title="Sistema de Previsão Climática - Brasil",
@@ -168,20 +175,42 @@ def main():
     # --- Seção: Previsão Individual ---
     if opcao == "Previsão Individual":
         st.header("🔮 Previsão para Chuvas")
-        st.markdown("Selecione um município e as condições meteorológicas para obter uma previsão detalhada do volume de chuva.")
+        st.markdown("Selecione um município no mapa ou na lista abaixo para obter a previsão detalhada.")
 
-        municipios_list = generate_municipios_list()["cidade"].tolist()
-
-        municipio_selecionado = st.selectbox(
-            "Selecione o Município:",
-            municipios_list
+        estacoes_df = generate_municipios_list()
+        
+        fig_mapa = px.scatter_geo(
+            estacoes_df,
+            lat='lat',
+            lon='lon',
+            hover_name='cidade',
+            color='tipo_estacao',
+            title='Localização das Estações Meteorológicas (Simulação)',
+            scope='south america'
+        )
+        fig_mapa.update_geos(
+            lonaxis_range=[-75, -30], lataxis_range=[-35, 5], center={"lat": -14, "lon": -55},
+            showcountries=True, countrycolor="black", showsubunits=True, subunitcolor="grey"
         )
         
-        dias_previsao = st.selectbox(
-            "Selecione o número de dias para a previsão:",
-            [1, 3, 5, 7, 10]
-        )
+        # Lógica de clique no mapa
+        if PLOTLY_EVENTS_AVAILABLE:
+            selected_points = plotly_events(fig_mapa, click_event=True)
+            if selected_points:
+                point_index = selected_points[0]['pointIndex']
+                selected_city = estacoes_df.loc[point_index, 'cidade']
+                st.session_state['municipio_selecionado'] = selected_city
+        else:
+            st.warning("⚠️ O componente de interação com o mapa não está disponível. Por favor, utilize a lista abaixo.")
 
+        municipios_list = estacoes_df["cidade"].tolist()
+        municipio_selecionado = st.selectbox(
+            "Selecione o Município:",
+            municipios_list,
+            index=municipios_list.index(st.session_state.get('municipio_selecionado', "Itirapina"))
+        )
+        st.session_state['municipio_selecionado'] = municipio_selecionado
+        
         st.subheader("Parâmetros da Previsão")
         col1, col2 = st.columns(2)
         with col1:
@@ -202,14 +231,14 @@ def main():
                 "rad_solar": 20 # Valor fixo para simulação
             }
             
-            previsoes_df = make_prediction_series(dados_input, days=dias_previsao)
+            previsoes_df = make_prediction_series(dados_input, days=1)
             st.subheader(f"📊 Previsão Diária para {municipio_selecionado}")
             st.dataframe(previsoes_df)
 
             # Nova seção para as métricas de desempenho
             st.markdown("---")
             st.subheader("📈 Análise de Desempenho do Modelo")
-            st.markdown("*(Métricas simuladas para demonstração)*")
+            st.markdown("*(Métricas simuladas para demonstração do modelo XGBoost)*")
             
             metrics_data = simulate_metrics(municipio_selecionado)
             
@@ -231,31 +260,6 @@ def main():
             fig_metrics.update_layout(xaxis_title="", yaxis_title="Valor da Métrica")
             st.plotly_chart(fig_metrics, use_container_width=True)
 
-            # Gráficos da previsão
-            st.markdown("---")
-            st.subheader("Gráficos da Previsão")
-            
-            fig_line_precip = px.line(
-                previsoes_df, 
-                x="data", 
-                y="precipitacao_mm",
-                markers=True,
-                title="Tendência Diária de Chuva",
-                color_discrete_sequence=["#0077b6"]
-            )
-            fig_line_precip.update_layout(xaxis_title="Data", yaxis_title="Precipitação (mm)")
-            st.plotly_chart(fig_line_precip, use_container_width=True)
-
-            fig_bar_precip = px.bar(
-                previsoes_df,
-                x="data",
-                y="precipitacao_mm",
-                title="Volume de Chuva Previsto por Dia",
-                color="precipitacao_mm",
-                color_continuous_scale=px.colors.sequential.Teal
-            )
-            fig_bar_precip.update_layout(xaxis_title="Data", yaxis_title="Precipitação (mm)")
-            st.plotly_chart(fig_bar_precip, use_container_width=True)
 
     # --- Seção: Análise de Dados e Previsões ---
     elif opcao == "Análise de Dados e Previsões":
@@ -329,12 +333,29 @@ def main():
                     st.subheader("Resultados das Previsões")
                     st.dataframe(df)
                     
-                    if "data" in df.columns:
-                        df["data"] = pd.to_datetime(df["data"])
-                        fig = px.line(df, x="data", y="previsao_precipitacao", 
-                                      title="Previsão de Precipitação ao Longo do Tempo")
-                        fig.update_yaxis(title="Precipitação (mm)")
-                        st.plotly_chart(fig, use_container_width=True)
+                    col_graphs1, col_graphs2 = st.columns(2)
+
+                    with col_graphs1:
+                        if "data" in df.columns:
+                            df["data"] = pd.to_datetime(df["data"])
+                            fig_line = px.line(df, x="data", y="previsao_precipitacao", 
+                                          title="Previsão de Precipitação ao Longo do Tempo")
+                            fig_line.update_yaxis(title="Precipitação (mm)")
+                            st.plotly_chart(fig_line, use_container_width=True)
+
+                    with col_graphs2:
+                        fig_bar = px.bar(df, x=df.index, y="previsao_precipitacao",
+                                    title="Volume de Chuva Previsto por Amostra",
+                                    color="previsao_precipitacao",
+                                    color_continuous_scale=px.colors.sequential.Teal)
+                        fig_bar.update_layout(xaxis_title="Amostra", yaxis_title="Precipitação (mm)")
+                        st.plotly_chart(fig_bar, use_container_width=True)
+                    
+                    if "precipitacao_mm" in df.columns:
+                         fig_scatter = px.scatter(df, x="precipitacao_mm", y="previsao_precipitacao", 
+                                        title="Comparação: Dados Reais vs. Previsões",
+                                        labels={"precipitacao_mm": "Dados Reais (mm)", "previsao_precipitacao": "Previsão (mm)"})
+                         st.plotly_chart(fig_scatter, use_container_width=True)
                     
                     csv_file = df.to_csv(index=False)
                     b64 = base64.b64encode(csv_file.encode()).decode()
@@ -385,7 +406,7 @@ def main():
             
     # Rodapé
     st.markdown("---")
-    st.markdown("**Desenvolvido por:** Rafael Grecco Sanches | **Versão:** 2.0 | **Última atualização:** 2024")
+    st.markdown("**Desenvolvido por:** Rafael Grecco Sanches | **Versão:** 2.1 | **Última atualização:** 2024")
 
 if __name__ == "__main__":
     main()
