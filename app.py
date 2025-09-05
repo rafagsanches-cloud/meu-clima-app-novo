@@ -358,11 +358,11 @@ def main():
         st.subheader("🔗 Meus Contatos")
         col_links1, col_links2, col_links3 = st.columns(3)
         with col_links1:
-            st.markdown("[Currículo Lattes](https://lattes.cnpq.br/XXXXXXXXXXXXXXX)")
+            st.markdown("[Currículo Lattes](http://lattes.cnpq.br/2395726310692375)")
         with col_links2:
-            st.markdown("[Google Acadêmico](https://scholar.google.com/citations?user=XXXXXXXXXXXXXXX)")
+            st.markdown("[Google Acadêmico](https://scholar.google.com/citations?user=hCerscwAAAAJ&hl=pt-BR)")
         with col_links3:
-            st.markdown("[LinkedIn](https://linkedin.com/in/XXXXXXXXXXXXXXX)")
+            st.markdown("[LinkedIn](www.linkedin.com/in/rafael-grecco-sanches-202807226)")
             
     st.markdown("---")
     st.markdown("**Desenvolvido por:** Rafael Grecco Sanches | **Versão:** 2.2 | **Última atualização:** 2024")
