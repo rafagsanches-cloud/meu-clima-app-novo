@@ -10,7 +10,7 @@ import base64
 # Configuração da página e ícone
 st.set_page_config(
     page_title="Sistema de Previsão Climática - Brasil",
-    page_icon="🌈",
+    page_icon="🌧️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -155,7 +155,7 @@ def simulate_metrics(municipio):
 
 # Função principal que roda a aplicação
 def main():
-    st.title("🌧️ Sistema de Previsão Climática - Brasil")
+    st.title("🌧️ Previsões Climáticas: Nuvem & Chuva")
     st.markdown("### Previsão de Volume Diário de Chuva (mm)")
 
     # Sidebar para navegação
@@ -167,8 +167,8 @@ def main():
 
     # --- Seção: Previsão Individual ---
     if opcao == "Previsão Individual":
-        st.header("🔮 Previsão Individual e Análise de Desempenho")
-        st.markdown("Selecione um município e as condições meteorológicas para obter uma previsão detalhada.")
+        st.header("🔮 Previsão para Chuvas")
+        st.markdown("Selecione um município e as condições meteorológicas para obter uma previsão detalhada do volume de chuva.")
 
         municipios_list = generate_municipios_list()["cidade"].tolist()
 
@@ -191,7 +191,7 @@ def main():
             umidade = st.slider("Umidade Relativa (%)", 0.0, 100.0, 60.0, 1.0)
             vel_vento = st.slider("Velocidade do Vento (m/s)", 0.0, 30.0, 5.0, 0.1)
             
-        if st.button("🚀 Fazer Previsão", type="primary"):
+        if st.button("🚀 Gerar Previsão", type="primary"):
             dados_input = {
                 "municipio": municipio_selecionado,
                 "temp_max": temp_max,
@@ -203,23 +203,33 @@ def main():
             }
             
             previsoes_df = make_prediction_series(dados_input, days=dias_previsao)
-            st.subheader(f"📊 Análise Detalhada para {municipio_selecionado}")
+            st.subheader(f"📊 Previsão Diária para {municipio_selecionado}")
             st.dataframe(previsoes_df)
 
             # Nova seção para as métricas de desempenho
             st.markdown("---")
-            st.subheader("📈 Métricas de Desempenho do Modelo")
-            st.markdown("*(Valores simulados para demonstração)*")
+            st.subheader("📈 Análise de Desempenho do Modelo")
+            st.markdown("*(Métricas simuladas para demonstração)*")
             
             metrics_data = simulate_metrics(municipio_selecionado)
             
-            col_metrics1, col_metrics2, col_metrics3 = st.columns(3)
-            with col_metrics1:
-                st.metric(label="Erro Quadrático Médio (RMSE)", value=f"{metrics_data['RMSE']:.2f}")
-            with col_metrics2:
-                st.metric(label="Erro Absoluto Médio (MAE)", value=f"{metrics_data['MAE']:.2f}")
-            with col_metrics3:
-                st.metric(label="Coeficiente de Determinação (R²)", value=f"{metrics_data['R2']:.2f}")
+            # Criando o gráfico de barras das métricas
+            metrics_df = pd.DataFrame(list(metrics_data.items()), columns=["Métrica", "Valor"])
+            fig_metrics = px.bar(
+                metrics_df,
+                x="Métrica",
+                y="Valor",
+                color="Métrica",
+                title="Métricas de Avaliação do Modelo",
+                color_discrete_map={
+                    "RMSE": "#0077b6",
+                    "MAE": "#00b4d8",
+                    "R2": "#90e0ef"
+                },
+                text_auto=True
+            )
+            fig_metrics.update_layout(xaxis_title="", yaxis_title="Valor da Métrica")
+            st.plotly_chart(fig_metrics, use_container_width=True)
 
             # Gráficos da previsão
             st.markdown("---")
@@ -250,7 +260,7 @@ def main():
     # --- Seção: Análise de Dados e Previsões ---
     elif opcao == "Análise de Dados e Previsões":
         st.header("🗺️ Análise de Dados e Previsões Mensais")
-        st.markdown("Explore a localização das estações no mapa e selecione um município para ver a previsão detalhada para o próximo mês.")
+        st.markdown("Explore a localização das estações no mapa. Abaixo, selecione um município para ver a previsão detalhada para o próximo mês.")
         
         estacoes_df = generate_municipios_list()
         
@@ -345,7 +355,7 @@ def main():
         
         #### 📈 Por que este sistema é especial?
         Nossa metodologia segue um rigor científico, com etapas como:
-        - **Modelos Generalizáveis**: O sistema é treinado para se adaptar a diferentes regiões, não apenas a uma localidade específica.
+        - **Modelos Generalizáveis**: O sistema utiliza o modelo **XGBoost** para se adaptar a diferentes regiões, não apenas a uma localidade específica.
         - **Engenharia de Features**: Criamos variáveis complexas a partir de dados simples, o que aumenta a precisão das previsões.
         - **Validação Rigorosa**: A performance do modelo é validada de forma a garantir sua confiabilidade em diferentes cenários.
         
@@ -375,7 +385,7 @@ def main():
             
     # Rodapé
     st.markdown("---")
-    st.markdown("**Desenvolvido por:** Rafael Grecco Sanches | **Versão:** 1.9 | **Última atualização:** 2024")
+    st.markdown("**Desenvolvido por:** Rafael Grecco Sanches | **Versão:** 2.0 | **Última atualização:** 2024")
 
 if __name__ == "__main__":
     main()
