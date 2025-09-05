@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 import base64
 import os
@@ -40,9 +40,9 @@ def create_features(df, config):
 
     return df_copy.dropna()
 
-def make_prediction(df_predict):
+def make_prediction_series(df_predict, num_days):
     """
-    Simula previsões de precipitação com base nos dados de entrada.
+    Simula uma série de previsões de precipitação para um número de dias.
     Esta função não depende de nenhum modelo externo ou biblioteca.
     """
     
@@ -54,14 +54,21 @@ def make_prediction(df_predict):
         "numeric_columns": ['temp_max', 'temp_min', 'umidade', 'pressao', 'vel_vento', 'rad_solar']
     }
     
-    X_predict = create_features(df_predict.copy(), config_itirapina)
+    df_processed = create_features(df_predict.copy(), config_itirapina)
     
-    # Lógica de previsão simulada (agora 100% independente)
-    # A precipitação é uma função simples da temperatura máxima, umidade e um termo aleatório.
-    predictions = (0.2 * X_predict['temp_max']) + (0.1 * X_predict['umidade']) + np.random.uniform(0, 5, size=len(X_predict))
+    # Lógica de previsão simulada
+    # A precipitação é uma função simples das features de entrada mais um termo aleatório e um fator de tendência.
+    predictions = (0.2 * df_processed['temp_max']) + (0.1 * df_processed['umidade']) + np.random.uniform(0, 5, size=len(df_processed))
     predictions[predictions < 0] = 0
     
-    return pd.Series(predictions, index=df_predict.index, name=f"previsao_precipitacao")
+    # Criar uma série temporal de previsões
+    forecast_dates = pd.date_range(start=df_processed.index.max(), periods=num_days, freq='D')
+    
+    # Simular uma série com leve decaimento e ruído
+    simulated_forecast = predictions.iloc[-1] + np.random.normal(loc=0, scale=1.5, size=num_days)
+    simulated_forecast[simulated_forecast < 0] = 0
+    
+    return pd.Series(simulated_forecast, index=forecast_dates, name=f"previsao_precipitacao")
 
 def simulate_metrics(municipio):
     """Simula métricas de desempenho para um município específico."""
@@ -176,12 +183,37 @@ def main():
             index=municipios_list.index("Itirapina")
         )
         
+        # Novo: Mapa interativo para visualização das cidades
+        st.subheader("📍 Localização dos Municípios")
+        fig_map = px.scatter_mapbox(
+            estacoes_df,
+            lat="lat",
+            lon="lon",
+            hover_name="cidade",
+            hover_data={"estado": True, "tipo_estacao": True, "lat": False, "lon": False},
+            color_discrete_sequence=["#0077b6"],
+            zoom=3,
+            height=400
+        )
+        fig_map.update_layout(
+            mapbox_style="carto-positron",
+            margin={"r":0,"t":0,"l":0,"b":0}
+        )
+        st.plotly_chart(fig_map, use_container_width=True)
+
+        st.markdown("---")
         st.subheader("Parâmetros da Previsão")
+        
         col1, col2 = st.columns(2)
         with col1:
+            num_dias = st.number_input(
+                "Número de dias para a previsão:", 
+                min_value=1, max_value=30, value=7, step=1, 
+                help="Selecione o período para a previsão (de 1 a 30 dias)."
+            )
+        with col2:
             temp_max = st.slider("Temperatura Máxima (°C)", -5.0, 45.0, 25.0, 0.1)
             temp_min = st.slider("Temperatura Mínima (°C)", -10.0, 35.0, 15.0, 0.1)
-        with col2:
             umidade = st.slider("Umidade Relativa (%)", 0.0, 100.0, 60.0, 1.0)
             vel_vento = st.slider("Velocidade do Vento (m/s)", 0.0, 30.0, 5.0, 0.1)
             
@@ -197,13 +229,21 @@ def main():
             }
             df_input = pd.DataFrame(dados_input)
             
-            # Usando a sua função real de make_prediction
-            previsoes = make_prediction(df_input)
+            # Usando a nova função para previsão de série temporal
+            previsoes = make_prediction_series(df_input, num_dias)
             
-            previsao_final = previsoes.iloc[0]
-            st.subheader(f"📊 Previsão Diária para {municipio_selecionado}")
-            st.metric(label="Precipitação Prevista", value=f"{previsao_final:.2f} mm")
+            st.subheader(f"📊 Previsão para {municipio_selecionado} - {num_dias} Dia(s)")
             
+            # Gráfico de linhas para a série temporal de previsão
+            fig_previsao = px.line(
+                x=previsoes.index,
+                y=previsoes.values,
+                title=f'Previsão de Precipitação para os Próximos {num_dias} Dias',
+                labels={'x': 'Data', 'y': 'Precipitação (mm)'}
+            )
+            fig_previsao.update_traces(mode='lines+markers', line=dict(color='#0077b6'))
+            st.plotly_chart(fig_previsao, use_container_width=True)
+
             st.markdown("---")
             st.subheader("📈 Análise de Desempenho do Modelo")
             st.markdown("*(Métricas simuladas para demonstração do modelo XGBoost)*")
@@ -247,8 +287,8 @@ def main():
                 
                 if st.button("🔮 Processar Previsões", type="primary"):
                     with st.spinner('Processando previsões...'):
-                        # Usando a sua função real de make_prediction
-                        df["previsao_precipitacao"] = make_prediction(df)
+                        # Usando a nova função de previsão para a série de dados do CSV
+                        df["previsao_precipitacao"] = make_prediction_series(df, len(df))
                     
                     st.subheader("Resultados das Previsões")
                     st.dataframe(df)
