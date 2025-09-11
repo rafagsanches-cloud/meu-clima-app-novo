@@ -51,11 +51,21 @@ def fetch_ana_station_data(station_code: str, num_days: int, data_type: str = "p
     return df
 
 def get_list_of_stations():
-    """Simula a obtenção de uma lista de estações da ANA."""
+    """Simula a obtenção de uma lista de estações da ANA, com foco em SP."""
     return pd.DataFrame({
-        'codigo': ['35520000', '35520002', '35520004', '35520005', '35520006'],
-        'nome': ['Estação A - Rio Tiete', 'Estação B - Rio Piracicaba', 
-                 'Estação C - Rio Paranapanema', 'Estação D - Rio Grande', 
-                 'Estação E - Rio São Francisco'],
-        'tipo_dados': ['precipitacao', 'nivel', 'precipitacao', 'descarga', 'nivel']
+        'codigo': ['35520000', '35520002', '35520004', '35520005', '35520006',
+                   '45010001', '45010002', '45010003', '46020004', '46020005',
+                   '47030006', '47030007', '48040008', '48040009', '49050010',
+                   '49050011', '50060012', '50060013', '51070014', '51070015',
+                   '52080016', '52080017', '53090018', '53090019', '54100020'],
+        'nome': ['Estação A - Campinas', 'Estação B - São Paulo', 'Estação C - Santos', 'Estação D - Ribeirão Preto', 'Estação E - São José do Rio Preto',
+                 'Estação F - Bauru', 'Estação G - Presidente Prudente', 'Estação H - Piracicaba', 'Estação I - Jundiaí', 'Estação J - Sorocaba',
+                 'Estação K - São Carlos', 'Estação L - Araraquara', 'Estação M - Marília', 'Estação N - Campinas', 'Estação O - Taubaté',
+                 'Estação P - Mogi das Cruzes', 'Estação Q - São Vicente', 'Estação R - Guarulhos', 'Estação S - Botucatu', 'Estação T - Franca',
+                 'Estação U - Barretos', 'Estação V - Assis', 'Estação W - Lins', 'Estação X - Araçatuba', 'Estação Y - Rio Claro'],
+        'tipo_dados': ['precipitacao', 'nivel', 'precipitacao', 'descarga', 'nivel',
+                       'precipitacao', 'nivel', 'precipitacao', 'descarga', 'nivel',
+                       'precipitacao', 'nivel', 'precipitacao', 'descarga', 'nivel',
+                       'precipitacao', 'nivel', 'precipitacao', 'descarga', 'nivel',
+                       'precipitacao', 'nivel', 'precipitacao', 'descarga', 'nivel']
     })
