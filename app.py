@@ -225,43 +225,16 @@ def make_prediction_enhanced(df_input, num_days, municipio):
 
         # Fator específico do município (simulado)
         municipio_factors = {
-            "Itirapina": 1.0,
-            "Santos": 1.3,  # Litoral, mais chuva
-            "Cuiabá": 0.8,   # Centro-oeste, mais seco
-            "Natal": 1.2,    # Nordeste litorâneo,
-            "Campinas": 1.1,
-            "Ribeirão Preto": 0.9,
-            "São José dos Campos": 1.0,
-            "Sorocaba": 1.0,
-            "Piracicaba": 1.0,
-            "Bauru": 0.8,
-            "Araraquara": 0.9,
-            "São Carlos": 1.0,
-            "Franca": 0.9,
-            "Presidente Prudente": 0.8,
-            "Marília": 0.9,
-            "Araçatuba": 0.8,
-            "Botucatu": 0.9,
-            "Rio Claro": 1.0,
-            "Limeira": 1.0,
-            "Americana": 1.0,
-            "Jundiaí": 1.0,
-            "Taubaté": 1.0,
-            "Guaratinguetá": 1.0,
-            "Jacareí": 1.0,
-            "Mogi das Cruzes": 1.0,
-            "Suzano": 1.1,
-            "Diadema": 1.1,
-            "Cuiabá": 0.8,
-            "Campo Grande": 0.9,
-            "Londrina": 1.0,
-            "Maringá": 1.0,
-            "Cascavel": 1.0,
-            "Natal": 1.2,
-            "João Pessoa": 1.2,
-            "Recife": 1.3,
-            "Salvador": 1.2,
-            "Aracaju": 1.2
+            "Itirapina": 1.0, "Santos": 1.3, "Cuiabá": 0.8, "Natal": 1.2,
+            "Campinas": 1.1, "Ribeirão Preto": 0.9, "São José dos Campos": 1.0,
+            "Sorocaba": 1.0, "Piracicaba": 1.0, "Bauru": 0.8, "Araraquara": 0.9,
+            "São Carlos": 1.0, "Franca": 0.9, "Presidente Prudente": 0.8,
+            "Marília": 0.9, "Araçatuba": 0.8, "Botucatu": 0.9, "Rio Claro": 1.0,
+            "Limeira": 1.0, "Americana": 1.0, "Jundiaí": 1.0, "Taubaté": 1.0,
+            "Guaratinguetá": 1.0, "Jacareí": 1.0, "Mogi das Cruzes": 1.0,
+            "Suzano": 1.1, "Diadema": 1.1, "Campo Grande": 0.9, "Londrina": 1.0,
+            "Maringá": 1.0, "Cascavel": 1.0, "João Pessoa": 1.2, "Recife": 1.3,
+            "Salvador": 1.2, "Aracaju": 1.2
         }
         municipio_factor = municipio_factors.get(municipio, 1.0)
 
@@ -323,4 +296,6 @@ def generate_enhanced_historical_data(municipio, num_days=365):
             "Limeira": {"temp_base": 24, "temp_var": 7, "humidity_base": 68, "precip_factor": 1.0},
             "Americana": {"temp_base": 24, "temp_var": 7, "humidity_base": 68, "precip_factor": 1.0},
             "Jundiaí": {"temp_base": 23, "temp_var": 7, "humidity_base": 69, "precip_factor": 1.0},
-            "Taubaté": {"temp
+            "Taubaté": {"temp_base": 23, "temp_var": 7, "humidity_base": 70, "precip_factor": 1.0},
+            "Guaratinguetá": {"temp_base": 22, "temp_var": 7, "humidity_base": 71, "precip_factor": 1.0},
+            "Jacareí": {"temp_base": 23, "temp_var": 7
