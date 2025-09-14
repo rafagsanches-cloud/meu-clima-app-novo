@@ -228,7 +228,40 @@ def make_prediction_enhanced(df_input, num_days, municipio):
             "Itirapina": 1.0,
             "Santos": 1.3,  # Litoral, mais chuva
             "Cuiabá": 0.8,   # Centro-oeste, mais seco
-            "Natal": 1.2,    # Nordeste litorâneo
+            "Natal": 1.2,    # Nordeste litorâneo,
+            "Campinas": 1.1,
+            "Ribeirão Preto": 0.9,
+            "São José dos Campos": 1.0,
+            "Sorocaba": 1.0,
+            "Piracicaba": 1.0,
+            "Bauru": 0.8,
+            "Araraquara": 0.9,
+            "São Carlos": 1.0,
+            "Franca": 0.9,
+            "Presidente Prudente": 0.8,
+            "Marília": 0.9,
+            "Araçatuba": 0.8,
+            "Botucatu": 0.9,
+            "Rio Claro": 1.0,
+            "Limeira": 1.0,
+            "Americana": 1.0,
+            "Jundiaí": 1.0,
+            "Taubaté": 1.0,
+            "Guaratinguetá": 1.0,
+            "Jacareí": 1.0,
+            "Mogi das Cruzes": 1.0,
+            "Suzano": 1.1,
+            "Diadema": 1.1,
+            "Cuiabá": 0.8,
+            "Campo Grande": 0.9,
+            "Londrina": 1.0,
+            "Maringá": 1.0,
+            "Cascavel": 1.0,
+            "Natal": 1.2,
+            "João Pessoa": 1.2,
+            "Recife": 1.3,
+            "Salvador": 1.2,
+            "Aracaju": 1.2
         }
         municipio_factor = municipio_factors.get(municipio, 1.0)
 
@@ -273,82 +306,21 @@ def generate_enhanced_historical_data(municipio, num_days=365):
             "Santos": {"temp_base": 25, "temp_var": 6, "humidity_base": 75, "precip_factor": 1.3},
             "Cuiabá": {"temp_base": 28, "temp_var": 10, "humidity_base": 60, "precip_factor": 0.7},
             "Natal": {"temp_base": 27, "temp_var": 4, "humidity_base": 70, "precip_factor": 1.1},
-        }
-        
-        params = municipio_params.get(municipio, municipio_params["Itirapina"])
-
-        # Padrão sazonal mais realista
-        day_of_year = dates.dayofyear
-        seasonal_pattern = np.sin(2 * np.pi * (day_of_year - 80) / 365)  # Pico no verão
-
-        # Temperaturas com padrão sazonal
-        temp_max_base = params["temp_base"] + seasonal_pattern * params["temp_var"] + np.random.normal(0, 2, num_days)
-        temp_min_base = temp_max_base - 8 - np.random.uniform(2, 6, num_days)
-
-        # Umidade inversamente correlacionada com temperatura
-        umidade_base = params["humidity_base"] - seasonal_pattern * 15 + np.random.normal(0, 8, num_days)
-        umidade_base = np.clip(umidade_base, 10, 95)
-
-        # Precipitação baseada em umidade e sazonalidade
-        precip_base = np.maximum(0, 
-            (umidade_base - 50) * 0.3 * params["precip_factor"] + 
-            seasonal_pattern * 3 * params["precip_factor"] + 
-            np.random.exponential(1.5, num_days)
-        )
-
-        # Outros parâmetros meteorológicos
-        pressao_base = 1013 + seasonal_pattern * 5 + np.random.normal(0, 3, num_days)
-        vel_vento_base = 5 + np.abs(np.random.normal(0, 2, num_days))
-        rad_solar_base = 20 + seasonal_pattern * 8 + np.random.normal(0, 3, num_days)
-
-        df = pd.DataFrame({
-            'data': dates,
-            'temp_max': np.round(temp_max_base, 1),
-            'temp_min': np.round(temp_min_base, 1),
-            'umidade': np.round(umidade_base, 1),
-            'pressao': np.round(pressao_base, 1),
-            'vel_vento': np.round(np.clip(vel_vento_base, 0, 50), 1),
-            'rad_solar': np.round(np.clip(rad_solar_base, 0, 40), 1),
-            'precipitacao': np.round(precip_base, 2)
-        })
-
-        return df
-
-    except Exception as e:
-        st.error(f"Erro ao gerar dados históricos: {str(e)}")
-        return pd.DataFrame()
-
-# --- Função para Métricas Melhoradas ---
-def calculate_enhanced_metrics(municipio, num_days):
-    """Calcula métricas mais realistas baseadas no município e período."""
-    base_metrics = {
-        "Itirapina": {"RMSE": 2.1, "MAE": 1.6, "R2": 0.82},
-        "Santos": {"RMSE": 2.8, "MAE": 2.1, "R2": 0.75},
-        "Cuiabá": {"RMSE": 3.2, "MAE": 2.4, "R2": 0.68},
-        "Natal": {"RMSE": 2.5, "MAE": 1.9, "R2": 0.78},
-    }
-    
-    metrics = base_metrics.get(municipio, base_metrics["Itirapina"])
-    
-    # Ajustar métricas baseado no período de previsão
-    if num_days > 7:
-        degradation_factor = 1 + (num_days - 7) * 0.05
-        metrics["RMSE"] *= degradation_factor
-        metrics["MAE"] *= degradation_factor
-        metrics["R2"] *= (1 / degradation_factor)
-    
-    return {k: round(v, 3) for k, v in metrics.items()}
-
-# --- Funções de Aquisição de Dados da ANA ---
-@st.cache_data(ttl=3600)  # Cache por 1 hora
-def fetch_ana_station_data(codigo_estacao: str, data_inicio: str, data_fim: str) -> pd.DataFrame:
-    """
-    Busca dados históricos de uma estação pluviométrica da ANA.
-    
-    Parâmetros:
-    codigo_estacao (str): Código da estação na ANA
-    data_inicio (str): Data de início no formato 'dd/mm/yyyy'
-    data_fim (str): Data de fim no formato 'dd/mm/yyyy'
-    
-    Retorna:
-    pd.DataFrame: DataFrame com os dados
+            "Campinas": {"temp_base": 23, "temp_var": 7, "humidity_base": 68, "precip_factor": 1.0},
+            "Ribeirão Preto": {"temp_base": 26, "temp_var": 8, "humidity_base": 62, "precip_factor": 0.9},
+            "São José dos Campos": {"temp_base": 22, "temp_var": 7, "humidity_base": 70, "precip_factor": 1.0},
+            "Sorocaba": {"temp_base": 23, "temp_var": 7, "humidity_base": 69, "precip_factor": 1.0},
+            "Piracicaba": {"temp_base": 24, "temp_var": 8, "humidity_base": 67, "precip_factor": 1.0},
+            "Bauru": {"temp_base": 25, "temp_var": 9, "humidity_base": 63, "precip_factor": 0.8},
+            "Araraquara": {"temp_base": 24, "temp_var": 8, "humidity_base": 65, "precip_factor": 0.9},
+            "São Carlos": {"temp_base": 23, "temp_var": 7, "humidity_base": 68, "precip_factor": 1.0},
+            "Franca": {"temp_base": 23, "temp_var": 8, "humidity_base": 64, "precip_factor": 0.9},
+            "Presidente Prudente": {"temp_base": 26, "temp_var": 9, "humidity_base": 61, "precip_factor": 0.8},
+            "Marília": {"temp_base": 24, "temp_var": 8, "humidity_base": 65, "precip_factor": 0.9},
+            "Araçatuba": {"temp_base": 27, "temp_var": 9, "humidity_base": 60, "precip_factor": 0.8},
+            "Botucatu": {"temp_base": 23, "temp_var": 8, "humidity_base": 66, "precip_factor": 0.9},
+            "Rio Claro": {"temp_base": 23, "temp_var": 7, "humidity_base": 67, "precip_factor": 1.0},
+            "Limeira": {"temp_base": 24, "temp_var": 7, "humidity_base": 68, "precip_factor": 1.0},
+            "Americana": {"temp_base": 24, "temp_var": 7, "humidity_base": 68, "precip_factor": 1.0},
+            "Jundiaí": {"temp_base": 23, "temp_var": 7, "humidity_base": 69, "precip_factor": 1.0},
+            "Taubaté": {"temp
