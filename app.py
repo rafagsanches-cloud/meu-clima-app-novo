@@ -8,12 +8,6 @@ import io
 import base64
 import os
 import warnings
-import requests
-from bs4 import BeautifulSoup
-import re
-from typing import List, Dict, Optional
-import time
-
 warnings.filterwarnings("ignore")
 
 # --- Configuração da Página ---
@@ -225,16 +219,10 @@ def make_prediction_enhanced(df_input, num_days, municipio):
 
         # Fator específico do município (simulado)
         municipio_factors = {
-            "Itirapina": 1.0, "Santos": 1.3, "Cuiabá": 0.8, "Natal": 1.2,
-            "Campinas": 1.1, "Ribeirão Preto": 0.9, "São José dos Campos": 1.0,
-            "Sorocaba": 1.0, "Piracicaba": 1.0, "Bauru": 0.8, "Araraquara": 0.9,
-            "São Carlos": 1.0, "Franca": 0.9, "Presidente Prudente": 0.8,
-            "Marília": 0.9, "Araçatuba": 0.8, "Botucatu": 0.9, "Rio Claro": 1.0,
-            "Limeira": 1.0, "Americana": 1.0, "Jundiaí": 1.0, "Taubaté": 1.0,
-            "Guaratinguetá": 1.0, "Jacareí": 1.0, "Mogi das Cruzes": 1.0,
-            "Suzano": 1.1, "Diadema": 1.1, "Campo Grande": 0.9, "Londrina": 1.0,
-            "Maringá": 1.0, "Cascavel": 1.0, "João Pessoa": 1.2, "Recife": 1.3,
-            "Salvador": 1.2, "Aracaju": 1.2
+            "Itirapina": 1.0,
+            "Santos": 1.3,  # Litoral, mais chuva
+            "Cuiabá": 0.8,   # Centro-oeste, mais seco
+            "Natal": 1.2,    # Nordeste litorâneo
         }
         municipio_factor = municipio_factors.get(municipio, 1.0)
 
@@ -279,37 +267,6 @@ def generate_enhanced_historical_data(municipio, num_days=365):
             "Santos": {"temp_base": 25, "temp_var": 6, "humidity_base": 75, "precip_factor": 1.3},
             "Cuiabá": {"temp_base": 28, "temp_var": 10, "humidity_base": 60, "precip_factor": 0.7},
             "Natal": {"temp_base": 27, "temp_var": 4, "humidity_base": 70, "precip_factor": 1.1},
-            "Campinas": {"temp_base": 23, "temp_var": 7, "humidity_base": 68, "precip_factor": 1.0},
-            "Ribeirão Preto": {"temp_base": 26, "temp_var": 8, "humidity_base": 62, "precip_factor": 0.9},
-            "São José dos Campos": {"temp_base": 22, "temp_var": 7, "humidity_base": 70, "precip_factor": 1.0},
-            "Sorocaba": {"temp_base": 23, "temp_var": 7, "humidity_base": 69, "precip_factor": 1.0},
-            "Piracicaba": {"temp_base": 24, "temp_var": 8, "humidity_base": 67, "precip_factor": 1.0},
-            "Bauru": {"temp_base": 25, "temp_var": 9, "humidity_base": 63, "precip_factor": 0.8},
-            "Araraquara": {"temp_base": 24, "temp_var": 8, "humidity_base": 65, "precip_factor": 0.9},
-            "São Carlos": {"temp_base": 23, "temp_var": 7, "humidity_base": 68, "precip_factor": 1.0},
-            "Franca": {"temp_base": 23, "temp_var": 8, "humidity_base": 64, "precip_factor": 0.9},
-            "Presidente Prudente": {"temp_base": 26, "temp_var": 9, "humidity_base": 61, "precip_factor": 0.8},
-            "Marília": {"temp_base": 24, "temp_var": 8, "humidity_base": 65, "precip_factor": 0.9},
-            "Araçatuba": {"temp_base": 27, "temp_var": 9, "humidity_base": 60, "precip_factor": 0.8},
-            "Botucatu": {"temp_base": 23, "temp_var": 8, "humidity_base": 66, "precip_factor": 0.9},
-            "Rio Claro": {"temp_base": 23, "temp_var": 7, "humidity_base": 67, "precip_factor": 1.0},
-            "Limeira": {"temp_base": 24, "temp_var": 7, "humidity_base": 68, "precip_factor": 1.0},
-            "Americana": {"temp_base": 24, "temp_var": 7, "humidity_base": 68, "precip_factor": 1.0},
-            "Jundiaí": {"temp_base": 23, "temp_var": 7, "humidity_base": 69, "precip_factor": 1.0},
-            "Taubaté": {"temp_base": 23, "temp_var": 7, "humidity_base": 70, "precip_factor": 1.0},
-            "Guaratinguetá": {"temp_base": 22, "temp_var": 7, "humidity_base": 71, "precip_factor": 1.0},
-            "Jacareí": {"temp_base": 23, "temp_var": 7, "humidity_base": 70, "precip_factor": 1.0},
-            "Mogi das Cruzes": {"temp_base": 22, "temp_var": 7, "humidity_base": 72, "precip_factor": 1.0},
-            "Suzano": {"temp_base": 23, "temp_var": 7, "humidity_base": 71, "precip_factor": 1.1},
-            "Diadema": {"temp_base": 24, "temp_var": 6, "humidity_base": 73, "precip_factor": 1.1},
-            "Campo Grande": {"temp_base": 26, "temp_var": 8, "humidity_base": 65, "precip_factor": 0.9},
-            "Londrina": {"temp_base": 23, "temp_var": 8, "humidity_base": 68, "precip_factor": 1.0},
-            "Maringá": {"temp_base": 24, "temp_var": 8, "humidity_base": 67, "precip_factor": 1.0},
-            "Cascavel": {"temp_base": 22, "temp_var": 9, "humidity_base": 66, "precip_factor": 1.0},
-            "João Pessoa": {"temp_base": 28, "temp_var": 4, "humidity_base": 72, "precip_factor": 1.2},
-            "Recife": {"temp_base": 27, "temp_var": 5, "humidity_base": 75, "precip_factor": 1.3},
-            "Salvador": {"temp_base": 27, "temp_var": 5, "humidity_base": 74, "precip_factor": 1.2},
-            "Aracaju": {"temp_base": 28, "temp_var": 4, "humidity_base": 73, "precip_factor": 1.2}
         }
         
         params = municipio_params.get(municipio, municipio_params["Itirapina"])
@@ -326,7 +283,7 @@ def generate_enhanced_historical_data(municipio, num_days=365):
         umidade_base = params["humidity_base"] - seasonal_pattern * 15 + np.random.normal(0, 8, num_days)
         umidade_base = np.clip(umidade_base, 10, 95)
 
-        # Precipitação baseada em umidade and sazonalidade
+        # Precipitação baseada em umidade e sazonalidade
         precip_base = np.maximum(0, 
             (umidade_base - 50) * 0.3 * params["precip_factor"] + 
             seasonal_pattern * 3 * params["precip_factor"] + 
@@ -357,43 +314,12 @@ def generate_enhanced_historical_data(municipio, num_days=365):
 
 # --- Função para Métricas Melhoradas ---
 def calculate_enhanced_metrics(municipio, num_days):
-    """Calcula métricas mais realistas baseadas no município and período."""
+    """Calcula métricas mais realistas baseadas no município e período."""
     base_metrics = {
         "Itirapina": {"RMSE": 2.1, "MAE": 1.6, "R2": 0.82},
         "Santos": {"RMSE": 2.8, "MAE": 2.1, "R2": 0.75},
         "Cuiabá": {"RMSE": 3.2, "MAE": 2.4, "R2": 0.68},
         "Natal": {"RMSE": 2.5, "MAE": 1.9, "R2": 0.78},
-        "Campinas": {"RMSE": 2.3, "MAE": 1.7, "R2": 0.80},
-        "Ribeirão Preto": {"RMSE": 2.4, "MAE": 1.8, "R2": 0.79},
-        "São José dos Campos": {"RMSE": 2.2, "MAE": 1.7, "R2": 0.81},
-        "Sorocaba": {"RMSE": 2.3, "MAE": 1.7, "R2": 0.80},
-        "Piracicaba": {"RMSE": 2.3, "MAE": 1.7, "R2": 0.80},
-        "Bauru": {"RMSE": 2.5, "MAE": 1.9, "R2": 0.78},
-        "Araraquara": {"RMSE": 2.4, "MAE": 1.8, "R2": 0.79},
-        "São Carlos": {"RMSE": 2.3, "MAE": 1.7, "R2": 0.80},
-        "Franca": {"RMSE": 2.4, "MAE": 1.8, "R2": 0.79},
-        "Presidente Prudente": {"RMSE": 2.6, "MAE": 2.0, "R2": 0.77},
-        "Marília": {"RMSE": 2.4, "MAE": 1.8, "R2": 0.79},
-        "Araçatuba": {"RMSE": 2.7, "MAE": 2.0, "R2": 0.76},
-        "Botucatu": {"RMSE": 2.4, "MAE": 1.8, "R2": 0.79},
-        "Rio Claro": {"RMSE": 2.3, "MAE": 1.7, "R2": 0.80},
-        "Limeira": {"RMSE": 2.3, "MAE": 1.7, "R2": 0.80},
-        "Americana": {"RMSE": 2.3, "MAE": 1.7, "R2": 0.80},
-        "Jundiaí": {"RMSE": 2.2, "MAE": 1.7, "R2": 0.81},
-        "Taubaté": {"RMSE": 2.3, "MAE": 1.7, "R2": 0.80},
-        "Guaratinguetá": {"RMSE": 2.3, "MAE": 1.7, "R2": 0.80},
-        "Jacareí": {"RMSE": 2.2, "MAE": 1.7, "R2": 0.81},
-        "Mogi das Cruzes": {"RMSE": 2.3, "MAE": 1.7, "R2": 0.80},
-        "Suzano": {"RMSE": 2.4, "MAE": 1.8, "R2": 0.79},
-        "Diadema": {"RMSE": 2.5, "MAE": 1.9, "R2": 0.78},
-        "Campo Grande": {"RMSE": 2.6, "MAE": 2.0, "R2": 0.77},
-        "Londrina": {"RMSE": 2.4, "MAE": 1.8, "R2": 0.79},
-        "Maringá": {"RMSE": 2.4, "MAE": 1.8, "R2": 0.79},
-        "Cascavel": {"RMSE": 2.5, "MAE": 1.9, "R2": 0.78},
-        "João Pessoa": {"RMSE": 2.6, "MAE": 2.0, "R2": 0.77},
-        "Recife": {"RMSE": 2.9, "MAE": 2.2, "R2": 0.74},
-        "Salvador": {"RMSE": 2.7, "MAE": 2.1, "R2": 0.76},
-        "Aracaju": {"RMSE": 2.6, "MAE": 2.0, "R2": 0.77}
     }
     
     metrics = base_metrics.get(municipio, base_metrics["Itirapina"])
@@ -406,91 +332,6 @@ def calculate_enhanced_metrics(municipio, num_days):
         metrics["R2"] *= (1 / degradation_factor)
     
     return {k: round(v, 3) for k, v in metrics.items()}
-
-# --- Funções de Aquisição de Dados da ANA ---
-@st.cache_data(ttl=3600)  # Cache por 1 hora
-def fetch_ana_station_data(codigo_estacao: str, data_inicio: str, data_fim: str) -> pd.DataFrame:
-    """
-    Busca dados históricos de uma estação pluviométrica da ANA.
-    
-    Parâmetros:
-    codigo_estacao (str): Código da estação na ANA
-    data_inicio (str): Data de início no formato 'dd/mm/yyyy'
-    data_fim (str): Data de fim no formato 'dd/mm/yyyy'
-    
-    Retorna:
-    pd.DataFrame: DataFrame com os dados históricos
-    """
-    try:
-        # URL da API da ANA (simplificada - pode precisar de ajustes)
-        url = f"http://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos"
-        params = {
-            "codEstacao": codigo_estacao,
-            "dataInicio": data_inicio,
-            "dataFim": data_fim
-        }
-        
-        response = requests.get(url, params=params, timeout=30)
-        response.raise_for_status()
-        
-        # Parse do XML (a ANA geralmente retorna XML)
-        soup = BeautifulSoup(response.content, 'xml')
-        
-        # Extrair dados (estrutura pode variar)
-        dados = []
-        for item in soup.find_all('DadosHidrometeorologicos'):
-            data = item.find('DataHora').text.split()[0] if item.find('DataHora') else None
-            chuva = item.find('Chuva').text if item.find('Chuva') else None
-            vazao = item.find('Vazao').text if item.find('Vazao') else None
-            
-            if data and chuva:
-                dados.append({
-                    'data': pd.to_datetime(data),
-                    'precipitacao': float(chuva) if chuva != '' else 0.0
-                })
-        
-        df = pd.DataFrame(dados)
-        if not df.empty:
-            df.set_index('data', inplace=True)
-            return df
-        else:
-            st.warning(f"Nenhum dado encontrado para a estação {codigo_estacao}")
-            return pd.DataFrame()
-            
-    except Exception as e:
-        st.error(f"Erro ao buscar dados da ANA: {str(e)}")
-        return pd.DataFrame()
-
-@st.cache_data(ttl=86400)  # Cache por 24 horas
-def search_ana_stations(municipio: str, estado: str) -> List[Dict]:
-    """
-    Busca estações da ANA para um município específico.
-    Retorna lista de estações com seus códigos and informações.
-    """
-    try:
-        # Esta é uma implementação simplificada
-        # Na prática, você precisaria consultar o catálogo de estações da ANA
-        
-        # Mapeamento fictício de estações (substitua por busca real na API da ANA)
-        estacoes_por_municipio = {
-            "Itirapina": [{"codigo": "12345000", "nome": "Itirapina - Centro", "tipo": "Pluviométrica"}],
-            "Santos": [
-                {"codigo": "12345001", "nome": "Santos - Ponte", "tipo": "Pluviométrica"},
-                {"codigo": "12345002", "nome": "Santos - Praia", "tipo": "Pluviométrica"}
-            ],
-            "Cuiabá": [{"codigo": "12345003", "nome": "Cuiabá - Rio", "tipo": "Pluviométrica"}],
-            "Natal": [{"codigo": "12345004", "nome": "Natal - Centro", "tipo": "Pluviométrica"}]
-        }
-        
-        chave = f"{municipio}"
-        if chave in estacoes_por_municipio:
-            return estacoes_por_municipio[chave]
-        else:
-            return []
-            
-    except Exception as e:
-        st.error(f"Erro ao buscar estações: {str(e)}")
-        return []
 
 # --- Lista de Municípios Expandida ---
 @st.cache_data
@@ -576,7 +417,7 @@ def main():
     
     opcao = st.sidebar.selectbox(
         "Escolha uma funcionalidade:",
-        ["🔮 Previsão Individual", "📁 Upload de CSV", "📊 Análise Comparativa", "📡 Dados ANA", "ℹ️ Sobre o Sistema"],
+        ["🔮 Previsão Individual", "📁 Upload de CSV", "📊 Análise Comparativa", "ℹ️ Sobre o Sistema"],
         help="Selecione a funcionalidade desejada"
     )
 
@@ -650,77 +491,6 @@ def main():
             margin={"r":0,"t":40,"l":0,"b":0}
         )
         st.plotly_chart(fig_map, use_container_width=True)
-
-        # --- Seção de Aquisição de Dados da ANA ---
-        st.markdown("---")
-        st.subheader("📡 Dados Históricos da ANA")
-
-        # Buscar estações disponíveis para o município
-        estacoes = search_ana_stations(municipio_selecionado, municipio_info['estado'])
-
-        if estacoes:
-            estacao_selecionada = st.selectbox(
-                "Selecione a estação pluviométrica:",
-                options=[f"{e['codigo']} - {e['nome']}" for e in estacoes],
-                help="Selecione uma estação da ANA para obter dados históricos"
-            )
-            codigo_estacao = estacao_selecionada.split(" - ")[0]
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                data_inicio = st.date_input(
-                    "Data inicial:",
-                    value=datetime.now() - timedelta(days=365),
-                    max_value=datetime.now(),
-                    help="Data inicial para busca de dados históricos"
-                )
-            
-            with col2:
-                data_fim = st.date_input(
-                    "Data final:",
-                    value=datetime.now(),
-                    max_value=datetime.now(),
-                    help="Data final para busca de dados históricos"
-                )
-            
-            if st.button("📥 Buscar Dados Históricos da ANA"):
-                with st.spinner('Buscando dados da ANA...'):
-                    df_ana = fetch_ana_station_data(
-                        codigo_estacao,
-                        data_inicio.strftime('%d/%m/%Y'),
-                        data_fim.strftime('%d/%m/%Y')
-                    )
-                    
-                    if not df_ana.empty:
-                        st.success(f"Dados recuperados: {len(df_ana)} registros")
-                        
-                        # Exibir gráfico dos dados históricos
-                        fig_ana = px.line(
-                            df_ana, 
-                            x=df_ana.index, 
-                            y='precipitacao',
-                            title=f'Dados Históricos de Precipitação - {municipio_selecionado}',
-                            labels={'precipitacao': 'Precipitação (mm)', 'index': 'Data'}
-                        )
-                        st.plotly_chart(fig_ana, use_container_width=True)
-                        
-                        # Estatísticas dos dados
-                        st.subheader("Estatísticas dos Dados Históricos")
-                        col1, col2, col3 = st.columns(3)
-                        
-                        with col1:
-                            st.metric("Média", f"{df_ana['precipitacao'].mean():.1f} mm")
-                        with col2:
-                            st.metric("Máximo", f"{df_ana['precipitacao'].max():.1f} mm")
-                        with col3:
-                            st.metric("Total", f"{df_ana['precipitacao'].sum():.1f} mm")
-                        
-                        # Opção para usar esses dados na previsão
-                        if st.checkbox("Usar dados da ANA para calibrar a previsão"):
-                            st.info("Dados da ANA serão usados para melhorar a previsão")
-        else:
-            st.info("Não foram encontradas estações da ANA para este município")
 
         st.markdown("---")
         
@@ -1356,103 +1126,6 @@ def main():
         else:
             st.info("ℹ️ Selecione pelo menos 2 municípios para realizar a comparação")
 
-    elif opcao == "📡 Dados ANA":
-        st.header("📡 Aquisição de Dados da ANA")
-        st.markdown("Acesse dados históricos de estações pluviométricas da Agência Nacional de Águas.")
-        
-        municipios_df = get_municipios_data()
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            municipio_ana = st.selectbox(
-                "Selecione o município:",
-                municipios_df["cidade"].tolist(),
-                help="Selecione o município para buscar dados"
-            )
-        
-        with col2:
-            # Informações do município
-            municipio_info = municipios_df[municipios_df["cidade"] == municipio_ana].iloc[0]
-            st.markdown(f"""
-            **📍 {municipio_ana}**
-            - Estado: {municipio_info['estado']}
-            - Região: {municipio_info['regiao']}
-            """)
-        
-        # Buscar estações
-        estacoes = search_ana_stations(municipio_ana, municipio_info['estado'])
-        
-        if estacoes:
-            estacao_selecionada = st.selectbox(
-                "Selecione a estação:",
-                options=[f"{e['codigo']} - {e['nome']}" for e in estacoes],
-                help="Selecione uma estação da ANA"
-            )
-            codigo_estacao = estacao_selecionada.split(" - ")[0]
-            
-            # Período de dados
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                data_inicio = st.date_input(
-                    "Data inicial:",
-                    value=datetime.now() - timedelta(days=365),
-                    max_value=datetime.now()
-                )
-            
-            with col2:
-                data_fim = st.date_input(
-                    "Data final:",
-                    value=datetime.now(),
-                    max_value=datetime.now()
-                )
-            
-            if st.button("📥 Buscar Dados da Estação"):
-                with st.spinner('Buscando dados da ANA...'):
-                    df_ana = fetch_ana_station_data(
-                        codigo_estacao,
-                        data_inicio.strftime('%d/%m/%Y'),
-                        data_fim.strftime('%d/%m/%Y')
-                    )
-                    
-                    if not df_ana.empty:
-                        st.success(f"Dados recuperados: {len(df_ana)} registros")
-                        
-                        # Gráfico
-                        fig = px.line(
-                            df_ana, 
-                            x=df_ana.index, 
-                            y='precipitacao',
-                            title=f'Precipitação em {municipio_ana}',
-                            labels={'precipitacao': 'Precipitação (mm)', 'index': 'Data'}
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                        
-                        # Estatísticas
-                        st.subheader("Estatísticas")
-                        col1, col2, col3 = st.columns(3)
-                        
-                        with col1:
-                            st.metric("Média", f"{df_ana['precipitacao'].mean():.1f} mm")
-                        with col2:
-                            st.metric("Máximo", f"{df_ana['precipitacao'].max():.1f} mm")
-                        with col3:
-                            st.metric("Total", f"{df_ana['precipitacao'].sum():.1f} mm")
-                        
-                        # Download
-                        csv = df_ana.reset_index().to_csv(index=False)
-                        st.download_button(
-                            label="📥 Download CSV",
-                            data=csv,
-                            file_name=f"dados_ana_{municipio_ana}_{datetime.now().strftime('%Y%m%d')}.csv",
-                            mime="text/csv"
-                        )
-                    else:
-                        st.warning("Nenhum dado encontrado para os parâmetros selecionados")
-        else:
-            st.warning("Não foram encontradas estações da ANA para este município")
-
     else:  # Sobre o Sistema
         st.header("ℹ️ Sobre o Sistema")
         
@@ -1498,7 +1171,7 @@ def main():
             
             **Agricultura:**
             - Planejamento de irrigação
-            - Cronograma de plantio and colheita
+            - Cronograma de plantio e colheita
             - Prevenção de perdas por excesso de chuva
             
             **Gestão Urbana:**
@@ -1621,3 +1294,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
